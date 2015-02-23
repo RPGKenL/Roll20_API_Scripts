@@ -3,7 +3,7 @@
  * 
  * Copyright 2015: Ken L.
  * Dual licensed under the MIT or GPL Version 3 licenses.
- * https://gist.github.com/Roll20KenL/fc24f527a77f13f4f29f
+ * https://github.com/Roll20KenL/Roll20_API_Scripts/blob/master/morality.js
  * 
  * MIT: 
  * http://opensource.org/licenses/mit-license.php
