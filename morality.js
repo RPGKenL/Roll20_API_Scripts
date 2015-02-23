@@ -36,10 +36,10 @@
  * !Morality c:(?{caption})%%p:(?{paragon}):(?{paragon-skill})%%r:(?{renegade}):(?{renegade-skill})
  * 
  * Morality-Paragon
- * !Morality c:(?{caption})%%p:(?{paragon}):(?{paragon-skill})%%c:(?{caption})
+ * !Morality c:(?{caption})%%p:(?{paragon}):(?{paragon-skill})
  * 
  * Morality-Renegade
- * !Morality c:(?{caption})%%r:(?{renegade}):(?{renegade-skill})%%c:(?{caption})
+ * !Morality c:(?{caption})%%r:(?{renegade}):(?{renegade-skill})
  * 
  */
 
