@@ -40,7 +40,7 @@
  * block is malformed. Feel free to patch up the holes and commit to the git-hub to
  * make the script better for everyone.
  * 
- * <GITHUB LINK HERE>
+ * https://github.com/Roll20KenL/Roll20_API_Scripts/blob/master/cgen.js
  * 
  */
 

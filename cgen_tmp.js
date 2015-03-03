@@ -3,6 +3,8 @@
  *                      Ken L.
  *                      Russ H.
  *                      Yanet H.
+ * 
+ * https://github.com/Roll20KenL/Roll20_API_Scripts/blob/master/cgen_tmp.js
  */
 var CGTmp = {
         designTmp: {

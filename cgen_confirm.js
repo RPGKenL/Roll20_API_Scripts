@@ -19,7 +19,7 @@
  * This script is designed to auto confirm criticals from the basic templates
  * included in CreatureGen.
  * 
- * <GITHUB LINK HERE>
+ * https://github.com/Roll20KenL/Roll20_API_Scripts/blob/master/cgen_confirm.js
  * 
  */
 
