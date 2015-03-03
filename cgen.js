@@ -939,8 +939,8 @@ var CreatureGenPF = {
         var excluded = ['SR','DR','Immune','Resist','Weaknesses'];//TODO compensate for missing delimiters (SR on black dragons vs succubus)
         var rc = -1;
         var SR = null,DR = null,CMD = null,defenseAb = null,riders = null, name = null,
-            resist = null,immune = null,weak = null, senses = null, speed = null,
-            aryList = null, hasDefense=false;
+            resist = null,immune = null,weak = null, senses = null, speed = null, 
+            regen = null, aryList = null, hasDefense=false;
         var defenseList = null;
         
         var fmtLinkFunc = function(arg) {
@@ -1007,6 +1007,9 @@ var CreatureGenPF = {
         if (line) {defenseAb = this.getValueByName("Defensive Abilities",line,termChars);}
         line = this.getLineByName("Weaknesses",this.data,lineStartFnd,lineEndFnd);
         if (line) {weak = this.getValueByName("Weaknesses",line,termChars);}
+        // add Regeneration
+        line = this.getLineByName("regeneration",this.data,0,lineEndFnd);
+        if (line) {regen = this.getValueByName("regeneration",line,termChars);}
         // add CMD
         lineStartFnd = this.getLineNumberByName("STATISTICS",this.data);
         line = this.getLineByName("CMD",this.data,lineStartFnd);
@@ -1020,13 +1023,21 @@ var CreatureGenPF = {
         lineEndFnd = this.getLineNumberByName("TACTICS",this.data);
         if (!lineEndFnd) lineEndFnd = this.getLineNumberByName("STATISTICS",this.data);
         line = this.getLineByName("Speed",this.data,lineStartFnd,lineEndFnd);
-        if (line) {speed = this.getValueByName("Speed",line,termChars)}
+        if (line) {speed = this.getValueByName("Speed",line,termChars);}
         
         if (CMD) {
             hasDefense = true;
             defenseList = defenseList 
                 + '<div>'
                     + fmtLeadFunc('CMD:%%'+CMD)
+                + '</div>';
+        }
+        
+        if (regen) {
+            hasDefense = true;
+            defenseList = defenseList 
+                + '<div>'
+                    + fmtLeadFunc('regeneration:%%'+regen)
                 + '</div>';
         }
         
@@ -1518,7 +1529,7 @@ var CreatureGenPF = {
                     btnName: 'Special Abilities'
                 });
         }
-        // parse special abilities
+        // parse items
         this.parseItems(specials);
         if (this.characterObjExists("Items","ability",charId)) {
             hasExtras = true;
