@@ -3,8 +3,6 @@
  *                      Ken L.
  *                      Russ H.
  *                      Yanet H.
- * 
- * https://github.com/Roll20KenL/Roll20_API_Scripts/blob/master/cgen_tmp.js
  */
 var CGTmp = {
         designTmp: {
@@ -57,6 +55,55 @@ var CGTmp = {
                 genTopImg: 'https://s3.amazonaws.com/files.d20.io/images/7816014/jpO1FF9pA7Ipi__sFQAAMw/thumb.png?1424460680',
                 genMidImg: 'https://s3.amazonaws.com/files.d20.io/images/7816016/0XT65Rctt1imgamKQUO6sg/thumb.png?1424460684',
                 genBotImg: 'https://s3.amazonaws.com/files.d20.io/images/7816023/T6uTWEX4aMDL-78lhSLanw/thumb.png?1424460752',
+            },
+            Minimal: {
+                feedbackName: 'Ken L.',
+                feedbackImg: 'https://s3.amazonaws.com/files.d20.io/images/3466065/uiXt3Zh5EoHDkXmhGUumYQ/thumb.jpg?1395313520',
+                errorImg: 'https://s3.amazonaws.com/files.d20.io/images/7545187/fjEEs0Jvjz1uy3mGN5A_3Q/thumb.png?1423165317',
+                warningImg: 'https://s3.amazonaws.com/files.d20.io/images/7926480/NaBmVmKe94rdzXwVnLq0-w/thumb.png?1424965188',
+                successImg: 'https://s3.amazonaws.com/files.d20.io/images/7545189/5BR2W-XkmeVyXNsk-C8Z6g/thumb.png?1423165325',
+                
+                skillTitleFmt: 'style="color: #000000; font-weight: bold; font-size: 125%;"',
+                skillLabelFmt: 'style="color: #44824C; font-weight: bold; font-size: 110%;"',
+                skillTopImg: 'https://s3.amazonaws.com/files.d20.io/images/8033298/sWLU_HTxD7qtwS48i0ceug/thumb.jpg?1425423303',
+                skillMidImg: 'https://s3.amazonaws.com/files.d20.io/images/8033936/v1T2I-AegTteSvnL7sECwA/thumb.png?1425423578',
+                skillBotImg: 'https://s3.amazonaws.com/files.d20.io/images/8033298/sWLU_HTxD7qtwS48i0ceug/thumb.jpg?1425423303',
+            
+                spellBookTitleFmt: 'style="color: #000000; font-weight: bold; font-size: 125%;"',
+                spellBookLabelFmt: 'style="color: #44824C; font-weight: bold; font-size: 110%;"',
+                spellBookTopImg: 'https://s3.amazonaws.com/files.d20.io/images/8033298/sWLU_HTxD7qtwS48i0ceug/thumb.jpg?1425423303',
+                spellBookMidImg: 'https://s3.amazonaws.com/files.d20.io/images/8033936/v1T2I-AegTteSvnL7sECwA/thumb.png?1425423578',
+                spellBookBotImg: 'https://s3.amazonaws.com/files.d20.io/images/8033298/sWLU_HTxD7qtwS48i0ceug/thumb.jpg?1425423303',
+            
+                spellTitleFmt: 'style="color: #000000; font-weight: bold; font-size: 125%;"',
+                spellLabelFmt: 'style="color: #44824C; font-weight: bold; font-size: 110%;"',
+                spellTopImg: 'https://s3.amazonaws.com/files.d20.io/images/8033298/sWLU_HTxD7qtwS48i0ceug/thumb.jpg?1425423303',
+                spellMidImg: 'https://s3.amazonaws.com/files.d20.io/images/8033936/v1T2I-AegTteSvnL7sECwA/thumb.png?1425423578',
+                spellBotImg: 'https://s3.amazonaws.com/files.d20.io/images/8033298/sWLU_HTxD7qtwS48i0ceug/thumb.jpg?1425423303',
+            
+                specialTitleFmt: 'style="color: #000000; font-weight: bold; font-size: 125%;"',
+                specialLabelFmt: 'style="color: #44824C; font-weight: bold; font-size: 110%;"',
+                specialTopImg: 'https://s3.amazonaws.com/files.d20.io/images/8033298/sWLU_HTxD7qtwS48i0ceug/thumb.jpg?1425423303',
+                specialMidImg: 'https://s3.amazonaws.com/files.d20.io/images/8033936/v1T2I-AegTteSvnL7sECwA/thumb.png?1425423578',
+                specialBotImg: 'https://s3.amazonaws.com/files.d20.io/images/8033298/sWLU_HTxD7qtwS48i0ceug/thumb.jpg?1425423303',
+                
+                atkTitleFmt: 'style="color: #000000; font-weight: bold; font-size: 125%;"',
+                atkLabelFmt: 'style="color: #44824C; font-weight: bold; font-size: 110%;"',
+                atkTopImg: 'https://s3.amazonaws.com/files.d20.io/images/8033298/sWLU_HTxD7qtwS48i0ceug/thumb.jpg?1425423303',
+                atkMidImg: 'https://s3.amazonaws.com/files.d20.io/images/8033936/v1T2I-AegTteSvnL7sECwA/thumb.png?1425423578',
+                atkBotImg: 'https://s3.amazonaws.com/files.d20.io/images/8033298/sWLU_HTxD7qtwS48i0ceug/thumb.jpg?1425423303',
+                
+                atkMenuTitleFmt: 'style="color: #000000; font-weight: bold; font-size: 125%;"',
+                atkMenuLabelFmt: 'style="color: #44824C; font-weight: bold; font-size: 110%;"',
+                atkMenuTopImg: 'https://s3.amazonaws.com/files.d20.io/images/8033298/sWLU_HTxD7qtwS48i0ceug/thumb.jpg?1425423303',
+                atkMenuMidImg: 'https://s3.amazonaws.com/files.d20.io/images/8033936/v1T2I-AegTteSvnL7sECwA/thumb.png?1425423578',
+                atkMenuBotImg: 'https://s3.amazonaws.com/files.d20.io/images/8033298/sWLU_HTxD7qtwS48i0ceug/thumb.jpg?1425423303',
+                
+                genTitleFmt: 'style="color: #000000; font-weight: bold; font-size: 125%;"',
+                genLabelFmt: 'style="color: #44824C; font-weight: bold; font-size: 110%;"',
+                genTopImg: 'https://s3.amazonaws.com/files.d20.io/images/8033298/sWLU_HTxD7qtwS48i0ceug/thumb.jpg?1425423303',
+                genMidImg: 'https://s3.amazonaws.com/files.d20.io/images/8033936/v1T2I-AegTteSvnL7sECwA/thumb.png?1425423578',
+                genBotImg: 'https://s3.amazonaws.com/files.d20.io/images/8033298/sWLU_HTxD7qtwS48i0ceug/thumb.jpg?1425423303',
             },
             Alan: {
                 feedbackName: 'Alan H.',
@@ -283,6 +330,16 @@ var CGTmp = {
                     + '</div>'
                     + '<div class="img" style="column-gap: 0; line-height: 0; position: relative; text-align: center;">'
                         + '<img src="'+"https://s3.amazonaws.com/files.d20.io/images/7926602/lMjFWWNyFpUlbk80HqkeOQ/thumb.png?1424966073"+'">'
+                    + '</div>',
+
+            Inline:  '<div>'
+                        + '<div style="text-align: center; color: #DB831F; background-color: #F5E4D3; font-style: italic; font-weight: bold; width: 100%">'
+                            + '<<TITLE>>'
+                        + '</div>'
+                        + '<div style="text-align: left;">'
+                            + '<span style="font-weight: bold">Attack:</span> <<ATTACK>><br>'
+                            + '<span style="font-weight: bold">Damage:</span> <<DAMAGE>>'
+                        + '</div>'
                     + '</div>',
 
             RussBattle: '<div class="img" style="column-gap: 0; line-height: 0; position: relative; text-align: center;">'
