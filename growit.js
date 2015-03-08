@@ -2,22 +2,15 @@
  * GrowIt 0.5
  * 
  * Copyright 2015: Ken L.
- * Licensed under the GPL Version 3 license.
+ * Dual licensed under the MIT or GPL Version 3 licenses.
+ * https://gist.github.com/Roll20KenL/fc24f527a77f13f4f29f
+ * 
+ * MIT: 
+ * http://opensource.org/licenses/mit-license.php
+ * GPL v3: 
  * http://www.gnu.org/licenses/gpl.html
  * 
- * This script is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * This script is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
  * Grows a token using PF measurements
- * 
- * https://github.com/Roll20KenL/Roll20_API_Scripts/blob/master/growit.js
  * 
  */
 
@@ -33,10 +26,6 @@ var GrowIt = {
     fields: {
         feedbackName: 'Ken L.',
         feedbackImg: 'https://s3.amazonaws.com/files.d20.io/images/3466065/uiXt3Zh5EoHDkXmhGUumYQ/thumb.jpg?1395313520',
-    },
-    
-    init: function() {
-        
     },
     
     /**
@@ -190,6 +179,5 @@ var GrowIt = {
 };
 
 on("ready", function() {
-    GrowIt.init();
     GrowIt.registerAPI();
 });
