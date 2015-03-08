@@ -11,6 +11,8 @@
  * 
  * Grows a token using PF measurements
  * 
+ * https://github.com/Roll20KenL/Roll20_API_Scripts/blob/master/growit.js
+ * 
  */
 
 var GrowIt = {
