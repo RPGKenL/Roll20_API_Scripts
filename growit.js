@@ -1,5 +1,5 @@
 /**
- * GrowIt 0.5
+ * GrowIt
  * 
  * Copyright 2015: Ken L.
  * Licensed under the GPL Version 3 license.
