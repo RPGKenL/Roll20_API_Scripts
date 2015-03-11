@@ -120,15 +120,6 @@ var GrowIt = {
      */
     showHelp: function() {
         var content = null;
-        var mImg = null;
-        
-        if (this.fields.marker) {
-            mImg = _.find(this.statusMarkers,
-                function(elem) {
-                    return (elem.name == Blaster.fields.marker);
-                }).img;
-            mImg = '<img style="vertical-align: middle; width: 21px" src="'+mImg+'"></img>';
-        }
         
         content = '<div style="background-color: #FFFFFF; border: 1px solid black; left-margin 5x; right margin 5px; padding-top: 5px; padding-bottom: 5px;;">'
                     + '<div style="border-bottom: 1px solid black;">'
