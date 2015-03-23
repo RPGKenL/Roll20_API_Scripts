@@ -7,7 +7,7 @@
  * Contributors:
  * Andy W.
  * Shu Zong C.
- * Kevin van Zonneveld
+ * Carlos R. L. Rodrigues
  * 
  * 
  * This script is free software: you can redistribute it and/or modify
@@ -45,9 +45,9 @@
  */
 
 var CreatureGenPF = {
-    version: 1.00,
+    version: 1.2,
     author: "Ken L.",
-    contributers: "Andy W., Shu Zong C.,Kevin van Zonneveld",
+    contributers: "Andy W., Shu Zong C., Carlos R. L. Rodrigues",
     debugLvl: 1,
     locked: false,
     dmesg: null,
@@ -174,14 +174,14 @@ var CreatureGenPF = {
                         + '<div style="colspan: 2; color: #FFFFFF; font-style: italic; text-shadow: -1px -1px 1px #000, 1px -1px 1px #000, -1px 1px 1px #000, 1px 1px 1px #000; padding-top: 4px; padding-bottom: 4px; margin-left: auto; margin-right: auto; width: 160px">'
                             + '<span style="font-weight: bold;"><<TITLE>></span>'
                         + '</div>'
-                        + '<div style="color: #FFFFFF; text-shadow: -1px -1px 1px #000, 1px -1px 1px #000, -1px 1px 1px #000, 1px 1px 1px #000; padding-top: 4px; padding-bottom: 4px; display: block;">'
-                            + '<table style="width: 160px; text-align: left; margin-left: auto; margin-right: auto; border-spacing: 5;">'
+                        + '<div style="color: #FFFFFF; text-shadow: -1px -1px 1px #000, 1px -1px 1px #000, -1px 1px 1px #000, 1px 1px 1px #000; padding-top: 4px; padding-bottom: 4px; display: block; font-weight: bold;">'
+                            + '<table style="width: 140px; text-align: left; margin-left: auto; margin-right: auto; border-spacing: 5;">'
                                 + '<tr>'
-                                    + '<td style="text-align: right;">' + '<span style="font-weight: bold;">Attack:</span>' + '</td>'
+                                    + '<td>' + 'Attack:' + '</td>'
                                     + '<td>' + '<<ATTACK>>' + '</td>'
                                 + '</tr>'
                                 + '<tr>'
-                                    + '<td style="text-align: right;">' + '<span style="font-weight: bold;">Damage:</span>' + '</td>'
+                                    + '<td>' + 'Damage:' + '</td>'
                                     + '<td>' + '<<DAMAGE>>' + '</td>'
                                 + '</tr>'
                             + '</table>'
@@ -350,33 +350,27 @@ var CreatureGenPF = {
         rawData = token.get("gmnotes");
         this.creLog('RAW: ' + rawData);
         if (!rawData) {throw "no token notes";}
-        data = rawData.split(/%3Cbr|\n/);
+        data = rawData.split(/%3Cbr%3E|\\n|<br>/);
         
         //clean out all other data except text
         for (var i = data.length; i >= 0; i--) {
             if (data[i]) {
                 data[i] = CreatureGenPF.cleanString(data[i]).trim();
-                if (data[i][0]=">") {
-                    data[i] = data[i].replace(">","");
-                }
                 if (null === data[i].match(/[^\s]/)) {
                     data.splice(i,1)
                 }
             }
         }
         
-        for (var i = 0; i < data.length; i++)   {
-            this.creLog('('+i+') ' + data[i],1);
-            dispData += data[i]+'<br>';
-        }
+        dispData = this.formatDisplay(data);
         
         charSheet = createObj("character", {
             avatar: token.get("imgsrc"),
             name: "Creature",
             gmnotes: '',
             archived: false,
-            inplayerjournals: "",
-            controlledby: ""
+            inplayerjournals: '',
+            controlledby: ''
         });
         charSheet = CreatureGenPF.fixNewObject(charSheet);
         if (!charSheet) {
@@ -389,6 +383,15 @@ var CreatureGenPF = {
         this.character = charSheet;
         this.data = data;
         this.rawData = rawData;
+        
+        // warn on image source
+        if (charSheet.get('avatar') == '') {
+            this.addWarning('Unable to set avatar to character journal, only images you\'ve '
+                + 'uploaded yourself are viable during creation. Auto-population '
+                + '<i>(drag-drop population)</i> will not be possible without an avatar image.'
+                + ' You can still upload an avatar manually, or drag an image into the avatar field'
+                + ' from the image-search.');
+        }
         
         // parse up our data set.
         var specials = null;
@@ -406,6 +409,31 @@ var CreatureGenPF = {
             log("ERROR when parsing");
             throw e;
         }
+    },
+    
+    /**
+     * Format display of stat-block
+     */
+    formatDisplay: function(datum) {
+        if (!datum) return null;
+        var content = '';
+        
+        _.each(datum, function(e,i,l) {
+            CreatureGenPF.creLog('('+i+') ' + e,1);
+            if (e.match('DEFENSE')
+            || e.match('OFFENSE')
+            || e.match('TACTICS')
+            || e.match('BASE STATISTICS')
+            || e.match('STATISTICS')
+            || e.match('ECOLOGY')
+            || e.match('SPECIAL ABILITIES'))
+                content += '<div style="font-size: 112%; border-bottom: 1px solid black; border-top: 1px solid black; margin-top: 8px;">'+e+'</b></div>';
+            else if (e.match(/\(Ex\)|\(Su\)|\(Sp\)/i))
+                content += '<div>' + e + '</div>'
+            else
+                content += e+'<br>'
+        });
+        return content;
     },
 
     /**
@@ -463,7 +491,9 @@ var CreatureGenPF = {
                     token.set('name',name);
                     token.set('showname',true);
                     token.set('light_hassight',true);
-                    token.set('gmnotes', notes);
+                    token.set('gmnotes', notes
+                        .replace(/<div[^<>]*>/g,'')
+                        .replace(/<\/div>/g,'<br>'));
                 }
             });
         }
@@ -596,7 +626,7 @@ var CreatureGenPF = {
         if (lineStartFnd != null)
             for (var i = lineStartFnd; i < this.data.length; ++i) {
                 line = this.data[i];
-                if (line.match(/(Su)|(Ex)|(Sp)/)) {
+                if (line.match(/\(Su\)|\(Ex\)|\(Sp\)/i)) {
                     saName = line.substring(0,line.indexOf('(')).toLowerCase().trim();
                     re = new RegExp(saName,'ig');
                     action = "!\n" + this.fields.menuWhis + 
@@ -897,11 +927,27 @@ var CreatureGenPF = {
                             btnName: skillName
                         });
                 }
-                skillList = skillList 
-                    + '</div>'
-                    + this.menuTemplate.boundryImg({imgLink: this.design.skillBotImg});
-                this.addAbility("Skills",'',skillList,false,charId);
             }
+            if (!characterObjExists('SK-Perception','attribute',charId)) {
+                lineEndFnd = this.getLineNumberByName('DEFENSE',this.data);
+                line = this.getLineByName('Perception',this.data,0,lineEndFnd);
+                rc = this.getValueByName('Perception',line,termChars);
+                rc = this.getBonusNumber(rc,this.bonusEnum.SIGN);
+                abName = "SK-Perception";
+                abStr = "!\n" + this.fields.resultWhis + this.creName + ' ' + abName + " [[1d20"+rc+"]]";
+                this.addAbility(abName,'',abStr,false,charId);
+                skillList = skillList
+                    + this.menuTemplate.midButton({
+                        riders: skillRiders,
+                        creName: this.creName,
+                        abName: abName,
+                        btnName: 'Perception'
+                    });
+            }
+            skillList = skillList 
+                + '</div>'
+                + this.menuTemplate.boundryImg({imgLink: this.design.skillBotImg});
+            this.addAbility("Skills",'',skillList,false,charId);
         }
         
     },
@@ -2090,7 +2136,7 @@ var CreatureGenPF = {
             this.creLog("RiderInfo: " + riderInfo,3);
             if (riderInfo != null)
                 while(riderInfo.length > 0) {
-                    re = new RegExp("\\b"+riderName+"\\s+",'ig');
+                    re = new RegExp("\\b"+riderName+"\\b",'ig');
                     riderInfo[0] = riderInfo[0].replace(
                         re,this.getTermLink(riderName,this.termEnum.GENERAL)+" ");
                     retval += "<p>" + riderInfo[0] + "</p>" ;
@@ -2593,19 +2639,20 @@ var CreatureGenPF = {
         strSpecials = this.stripString(strSpecials, '\n', '');
         strSpecials = this.stripString(strSpecials, '%3Cbr', '');
         
-        strSpecials = this.stripString(strSpecials, "%3C", "<");
-        strSpecials = this.stripString(strSpecials, "%3E", ">");
-        strSpecials = this.stripString(strSpecials, "%23", "#");
-        strSpecials = this.stripString(strSpecials, "%3A", ":");
-        strSpecials = this.stripString(strSpecials, "%3B", ";");
-        strSpecials = this.stripString(strSpecials, "%3D", "=");
-        strSpecials = this.stripString(strSpecials, "%D7", "×");
-        strSpecials = this.stripString(strSpecials, "%u2018", "");
-        strSpecials = this.stripString(strSpecials, "%u2019", "");
-        strSpecials = this.stripString(strSpecials, "%u2013", "-");
-        strSpecials = this.stripString(strSpecials, "%u2014", "—");
-        strSpecials = this.stripString(strSpecials, "%u201C", "“");
-        strSpecials = this.stripString(strSpecials, "%u201D", "”");
+        strSpecials = this.stripString(strSpecials, "%09", '    ');
+        strSpecials = this.stripString(strSpecials, "%3C", '<');
+        strSpecials = this.stripString(strSpecials, "%3E", '>');
+        strSpecials = this.stripString(strSpecials, "%23", '#');
+        strSpecials = this.stripString(strSpecials, "%3A", ':');
+        strSpecials = this.stripString(strSpecials, "%3B", ';');
+        strSpecials = this.stripString(strSpecials, "%3D", '=');
+        strSpecials = this.stripString(strSpecials, "%D7", '×');
+        strSpecials = this.stripString(strSpecials, "%u2018", '');
+        strSpecials = this.stripString(strSpecials, "%u2019", '');
+        strSpecials = this.stripString(strSpecials, "%u2013", '-');
+        strSpecials = this.stripString(strSpecials, "%u2014", '—');
+        strSpecials = this.stripString(strSpecials, "%u201C", '“');
+        strSpecials = this.stripString(strSpecials, "%u201D", '”');
         
         
         while (strSpecials.search(/%../) != -1) {
@@ -2682,10 +2729,10 @@ var CreatureGenPF = {
         if (tokenImg && img) {
             content = content
                 + '<div style="position: relative">'
-                    + '<div style="position: relative; width: 70px; height: 70px;">'
-                        + '<img src="' + tokenImg + '" style="position: relative;">'
+                    + '<div style="position: relative; width: 70px; height: 70px; overflow: hidden;">'
+                        + '<img src="' + tokenImg + '" style="position: relative; width: 70px; height: 70px;">'
                     + '</div>'
-                    + '<div style="position: absolute; top: 0px; width: 70px; height: 70px; padding">'
+                    + '<div style="position: absolute; top: 0px; width: 70px; height: 70px;">'
                         + '<img src="' + img + '" style="position: relative;">'
                     + '</div>'
                 + '</div>';
