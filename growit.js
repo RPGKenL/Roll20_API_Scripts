@@ -1,5 +1,5 @@
 /**
- * GrowIt 0.5
+ * GrowIt
  * 
  * Copyright 2015: Ken L.
  * Licensed under the GPL Version 3 license.
@@ -20,7 +20,7 @@
  */
 
 var GrowIt = {
-    version: 0.55,
+    version: 0.6,
     author: 'Ken L.',
     
     bonusEnum: Object.freeze({
@@ -75,12 +75,12 @@ var GrowIt = {
     /**
      * Vitamin B12, grows token radially
      */
-    doGrow: function(args, selected) {
+    doGrow: function(args, selected, exact) {
         if (!args || !selected || selected.length < 1) {
             this.sendFeedback('Incorrect syntax/selection');
             this.showHelp();
             return;
-        }
+        } if (!exact) exact = false;
         var token = selected[0];
         var num = this.getBonusNumber(args,this.bonusEnum.SCALAR);
         var ft = num/5;
@@ -90,15 +90,26 @@ var GrowIt = {
             var height = token.get('height');
             var top = token.get('top');
             var left = token.get('left');
-
-            height += height*ft*2;
-            width += width*ft*2;
             
-            token.set('height',height);
-            token.set('width',width);
+            if (exact) {
+                height = height*ft*2;
+                width = width*ft*2;
+                top -= height/(ft*4);
+                left -= width/(ft*4);
+                token.set('height',height);
+                token.set('width',width);
+                token.set('top',top);
+                token.set('left',left);
+            } else {
+                height += height*ft*2;
+                width += width*ft*2;
+                token.set('height',height);
+                token.set('width',width);
+            }
             token.set('layer','map');
         } else {
             this.sendFeedback('Bad syntax');
+            this.showHelp();
         }
     },
     
@@ -139,6 +150,12 @@ var GrowIt = {
                         + '<li style="padding-left: 10px;">'
                             + 'Syntax: !growit [radius in feet(5ft=1SQ)]'
                         + '</li>'
+                        + '<div>'
+                            + '<span style="font-weight: bold;">!growit -exact</span>'
+                        + '</div>'
+                        + '<li style="padding-left: 10px;">'
+                            + 'same syntax as !growit, but grows to the exact radius, <i>including</i> the center unit'
+                        + '</li>'
                     + '</div>'
                 + '</div>';
         
@@ -155,6 +172,9 @@ var GrowIt = {
             
             if (args.indexOf('-help') === 0) {
                 this.showHelp();
+            } else if (args.indexOf('-exact') === 0) {
+                args = args.replace('-exact','').trim();
+                this.doGrow(args,selected,true);
             } else {
                 this.doGrow(args,selected);
             }
