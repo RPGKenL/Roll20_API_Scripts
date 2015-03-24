@@ -45,7 +45,7 @@
  */
 
 var CreatureGenPF = {
-    version: 1.2,
+    version: 1.21,
     author: "Ken L.",
     contributers: "Andy W., Shu Zong C., Carlos R. L. Rodrigues",
     debugLvl: 1,
@@ -928,7 +928,7 @@ var CreatureGenPF = {
                         });
                 }
             }
-            if (!characterObjExists('SK-Perception','attribute',charId)) {
+            if (!this.characterObjExists('SK-Perception','ability',charId)) {
                 lineEndFnd = this.getLineNumberByName('DEFENSE',this.data);
                 line = this.getLineByName('Perception',this.data,0,lineEndFnd);
                 rc = this.getValueByName('Perception',line,termChars);
