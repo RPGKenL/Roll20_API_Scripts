@@ -986,7 +986,7 @@ var CreatureGenPF = {
         var rc = -1;
         var SR = null,DR = null,CMD = null,defenseAb = null,riders = null, name = null,
             resist = null,immune = null,weak = null, senses = null, speed = null, 
-            regen = null, aryList = null, hasDefense=false;
+            regen = null, aura = null, fasthealing = null, aryList = null, hasDefense=false;
         var defenseList = null;
         
         var fmtLinkFunc = function(arg) {
@@ -1053,6 +1053,9 @@ var CreatureGenPF = {
         if (line) {defenseAb = this.getValueByName("Defensive Abilities",line,termChars);}
         line = this.getLineByName("Weaknesses",this.data,lineStartFnd,lineEndFnd);
         if (line) {weak = this.getValueByName("Weaknesses",line,termChars);}
+		// add Fast Healing
+		line = this.getLineByName("fast healing",this.data,0,lineEndFnd);
+        if (line) {fasthealing = this.getValueByName("fast healing",line,termChars);}
         // add Regeneration
         line = this.getLineByName("regeneration",this.data,0,lineEndFnd);
         if (line) {regen = this.getValueByName("regeneration",line,termChars);}
@@ -1064,6 +1067,9 @@ var CreatureGenPF = {
         lineEndFnd = this.getLineNumberByName("DEFENSE", this.data);
         line = this.getLineByName("Senses",this.data,0,lineEndFnd);
         if (line) {senses = this.getValueByName("Senses",line,termChars);}
+		// add Aura
+        line = this.getLineByName("Aura",this.data,0,lineEndFnd);
+        if (line) {aura = this.getValueByName("Aura",line,termChars);}
         // add Speed
         lineStartFnd = this.getLineNumberByName("OFFENSE", this.data);
         lineEndFnd = this.getLineNumberByName("TACTICS",this.data);
@@ -1083,9 +1089,17 @@ var CreatureGenPF = {
             hasDefense = true;
             defenseList = defenseList 
                 + '<div>'
-                    + fmtLeadFunc('regeneration:%%'+regen)
+                    + fmtLeadFunc('Regeneration:%%'+regen)
                 + '</div>';
         }
+
+		if (fasthealing) {
+			hasDefense = true;
+			defenseList = defenseList
+				+ '<div>' 
+					+ fmtLeadFunc('Fast Healing:%%'+fasthealing)
+				+ '</div>'; 
+		}
         
         if (DR || SR) {
             hasDefense = true;
@@ -1134,6 +1148,28 @@ var CreatureGenPF = {
             defenseList = defenseList
                 + '<div style="text-align:center;">'
                     + '<span style="font-weight: bold; color: #000000;">' + "Senses:" + '</span>'
+                + '</div>';
+            if (aryList.length > 3) {
+                defenseList += '<div>' + this.formatTable(aryList,2,fmtLinkFunc) + '</div>';
+            } else if (aryList.length > 0) {
+                for (var i = 0; i < aryList.length; i++) {
+                    if (!aryList[i] || !aryList[i].match(/[^\s]+/)) {
+                     continue;
+                    }
+                    defenseList = defenseList
+                        + '<div>'
+                            + fmtLinkFunc(aryList[i])
+                        + '</div>';
+                }
+            }
+        }
+
+        if (aura) {
+            hasDefense = true;
+            aryList = aura.split(/,(?![^\(\)]*\))|;(?![^\(\)]*\))/);
+            defenseList = defenseList
+                + '<div style="text-align:center;">'
+                    + '<span style="font-weight: bold; color: #000000;">' + "Aura:" + '</span>'
                 + '</div>';
             if (aryList.length > 3) {
                 defenseList += '<div>' + this.formatTable(aryList,2,fmtLinkFunc) + '</div>';
@@ -1843,9 +1879,9 @@ var CreatureGenPF = {
                     })
                 +'</div>';
 
-        str = str.replace(type,"");
-        str = str.replace(/\band/g,',');
-        volley = str.split(/\bor/g);
+        str = str.replace(type,"").trim();
+        str = str.replace(/\band\b/g,',');
+        volley = str.split(/\bor\b/g);
         if (volley.length > 1) {
             while (volley.length > 0) {
                 if (!volley[0] || !volley[0].match(/[^\s]+/)) {
@@ -3057,47 +3093,33 @@ var CreatureGenPF = {
                         + ' BUSY </span>');
                 } else if (args.indexOf('-set-design') === 0) {
                     args = args.replace('-set-design','').trim();
-                    this.locked = true;
                     this.selectDesignTemplate(args);
-                    this.locked = false;
                 } else if(args.indexOf('-set-attack') === 0) {
                     args = args.replace('-set-attack','').trim();
-                    this.locked = true;
                     this.selectAttackTemplate(args);
-                    this.locked = false;
                 } else if (args.indexOf('-help') === 0) {
-                    this.locked = true;
                     this.showHelp();
-                    this.locked = false;
                 } else if (args.indexOf('-dmesg') === 0) {
                     var level = 0;
                     args = args.replace('-dmesg','').trim();
                     level = this.getBonusNumber(args,this.bonusEnum.SCALAR);
-                    this.locked = true;
                     this.creLogDump(level);
                     this.sendFeedback('<span style="color: #FF8D0B;">'
                         + 'Dumping debug from last <b>GENESIS</b> at level ('+level+')'
                         + '</span>');
-                    this.locked = false;
                 } else if (args.indexOf('-player') === 0) {
                     args = args.replace('-player','').trim();
-                    this.locked = true;
                     this.doPlayerGenesis(msg,args);
-                    this.locked = false;
                 } else if (args.indexOf('-name') === 0) {
                     args = args.replace('-name','').trim();
-                    this.locked = true;
                     this.doNameGenesis(msg,args);
-                    this.locked = false;
                 } else {
                     this.sendFeedback("Unknown CreatureGen command '"+args+"'");
                     this.showHelp();
                 }
                 
             } else {
-                this.locked = true;
                 this.doGenesis(msg);
-                this.locked = false;
             }
         }
     },
