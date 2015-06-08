@@ -19,7 +19,7 @@
  * This script is designed to auto confirm criticals from the basic templates
  * included in CreatureGen.
  * 
- * https://github.com/Roll20KenL/Roll20_API_Scripts/blob/master/cgen_confirm.js
+ * <GITHUB LINK HERE>
  * 
  */
 
@@ -119,12 +119,12 @@ var crit_confirm = {
                             text = 'Confirm: [[1d20'+atk_bonus+']]';
                             disp = crit_confirm.critTmp.replace("<<TEXT>>",text);
                             crit_confirm.hasCrit = true;
-                            sendChat('Critical','/desc ' + disp);
+                            sendChat('','/desc ' + disp);
                         }
                         else if (baseroll == 1) {
                             text = 'Failure: [[1d20'+atk_bonus+']]';
                             disp = crit_confirm.critTmp.replace("<<TEXT>>",text);
-                            sendChat('Failure','/desc ' + disp);
+                            sendChat('','/desc ' + disp);
                         }
                         
                     } catch (e) {
@@ -138,7 +138,7 @@ var crit_confirm = {
                         + "d" + crit_confirm.dmgDie + " + " + parseInt(crit_confirm.dmgBonus)*(Math.max(crit_confirm.critRange.multi-1,1)) 
                         + "]]";
                 disp = crit_confirm.critTmp.replace("<<TEXT>>",text);
-                sendChat('CritDamage','/desc ' + disp);
+                sendChat('','/desc ' + disp);
             }
         });
         
@@ -150,3 +150,4 @@ on("ready", function() {
     crit_confirm.init();
     crit_confirm.registerAPI();
 });
+
