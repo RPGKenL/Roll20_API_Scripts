@@ -523,6 +523,7 @@ var CGTmp = {
                     + '<div class="img" style="column-gap: 0; line-height: 0; position: relative; text-align: center;">'
                         + '<img src="'+"https://s3.amazonaws.com/files.d20.io/images/7548984/ORVCA9UF1ebotxWT0moV9w/thumb.png?1423181318"+'">'
                     + '</div>',
+                    
         },
 }
     
