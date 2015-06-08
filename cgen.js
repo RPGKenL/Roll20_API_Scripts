@@ -45,7 +45,7 @@
  */
 
 var CreatureGenPF = {
-    version: 1.21,
+    version: 1.25,
     author: "Ken L.",
     contributers: "Andy W., Shu Zong C., Carlos R. L. Rodrigues",
     debugLvl: 1,
