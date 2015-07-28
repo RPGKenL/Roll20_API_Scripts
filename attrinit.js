@@ -23,12 +23,51 @@
  */
  
 var AttrInit = (function() {
-    var version = 0.4;
+	var version = 0.5;
 	var author = 'Ken L.';
 	
 	var fields = {
 		feedbackName: 'AttrInit',
 		feedbackImg: 'https://s3.amazonaws.com/files.d20.io/images/11101881/405iLsP67vYNBWEZxeRPKw/thumb.png?1438024460',
+	};
+	
+	/**
+	 * Collector constructor
+	 */
+	var CallbackCollector = function (cbFunc, expected, context) {
+		if (!cbFunc || isNaN(expected) || expected <= 0) return null;
+		this.func = cbFunc;
+		this.context = context;
+		this.current = expected;
+		this.calls = new Array();
+	};
+	/**
+	 * Collector prototypes
+	 */
+	CallbackCollector.prototype = {
+		setCallbackField: function(field) {
+			if (!field) return null;
+			this.context = field;
+		},
+		prolong: function () { ++this.current; },
+		getField: function() {	
+			return {
+				func:this.func,
+				context:this.context,
+				current:this.current,
+				calls:this.calls
+			};
+		},
+		call: function(args) {
+			this.calls.push(args);
+			if (--this.current === 0) {
+				if (!this.func) return;
+				if (this.context)
+					this.func.apply(this.context, [this.calls]);
+				else
+					this.func(this.calls);
+			}
+		},
 	};
 	
 	/**
@@ -47,7 +86,110 @@ var AttrInit = (function() {
 	};
 	
 	/**
-	 * Bang Bang! your're boolean!'
+	 * Place exact parameters
+	 */
+	var exactNest = function(journal,str) {
+		if (!journal || !str) return;
+		var retval = str;
+		var attrs = findObjs({
+			_type: 'attribute',
+			_characterid: journal.get('_id'),
+		});
+		var jname = journal.get('name');
+		var name;
+
+		_.each(attrs, function(e) {
+			name = e.get('name');
+			retval = retval.replace(new RegExp('@{(\\w+\\|)?'+name+'}','g'), function($0,$1) {
+				return $1?$0:('@{'+jname+'|'+name+'}');
+			});
+		});
+
+		return retval;
+	};
+	
+	var attrCalcAdd = function(args, selected) {
+		if (!args || !selected || selected.length < 1) {
+			sendFeedback('<span style="color: red;">Bad syntax</span>');
+			showHelp(); 
+			return;
+		}
+		var token,
+			journal,
+			bonus;
+		var modifiers = new Array();
+		
+		_.each(selected,function(e) {
+			token = getObj('graphic', e._id);
+			if (!token || token.get('_subtype') != 'token' || !(journal = token.get('represents')))
+				return;
+			journal = getObj('character',journal);
+			if (journal) {
+				bonus = characterObjExists(args,'attribute',journal.get('_id'));
+				if (bonus) {
+					bonus = bonus.get('current');
+					bonus = exactNest(journal,bonus).trim();
+					modifiers.push({id: e._id, bonus: bonus});
+				}
+			}
+		});
+		
+		var cc = new CallbackCollector(function(rolls) {
+			var turnorder = Campaign().get('turnorder');
+			var content = '';
+			var token,
+				val;
+			if (!turnorder) turnorder = [];
+			else turnorder = JSON.parse(turnorder);
+				
+			_.each(rolls,function(e) {
+				token = getObj("graphic",e.id);
+				
+				content += '<div>'
+					+ '<table width="100%">'
+					+ '<tr>'
+					+ '<td width="40px"><div style="width: 40px; height: 40px;"><img src="'+token.get('imgsrc')+'"></img></div></td>'
+					+ '<td width="100%"><div style="width: 100%; text-align: center;">' +(token.get('name') ? token.get('name'):'Creature')+'<br>[[' + e.result.baseroll+'+'+e.result.mod + ']]</div></td>'
+					+ '</tr>'
+					+ '</div>';
+				
+				if ((val = _.find(turnorder,function(elem) {return elem.id == e.id}))) {
+					val.pr = parseFloat(e.result.baseroll)+parseFloat(e.result.mod);
+				} else {
+					turnorder.push({
+						id: e.id,
+						pr: parseFloat(e.result.baseroll)+parseFloat(e.result.mod)
+					});
+				}
+			});
+			turnorder.sort(function(a,b) {
+					return b.pr-a.pr;
+			});
+			Campaign().set('turnorder',JSON.stringify(turnorder));
+			sendFeedback(content);
+		},modifiers.length);
+		
+		_.each(modifiers, function(e) {
+			sendChat('API','[[1d20+[['+e.bonus+']] ]]',function(objs) {
+				try {
+					var line = _.chain(objs[0].inlinerolls)
+						.pluck('results')
+						.last()
+						.value();
+					var baseroll = _.findWhere(line.rolls, {type: 'R', dice: 1, sides: 20}).results[0].v;
+					var mod = _.findWhere(line.rolls, {type: 'M'}).expr;
+					var mod = mod.replace('+','');
+					cc.call({id: e.id, result: {baseroll: baseroll, mod: mod}});
+				} catch (e) {
+					sendFeedback('<span style="color: red;">Error processing roll</span>');
+					log("AGI: Roll Error: " + JSON.stringify(objs));
+				}
+			});
+		});
+	};
+	
+	/**
+	 * Bang Bang! you're boolean!'
 	 */
 	var attrAdd = function(args, selected) {
 		if (!args || !selected || selected.length < 1) {
@@ -119,8 +261,6 @@ var AttrInit = (function() {
 				log("AGI: Roll Error: " + JSON.stringify(objs));
 			}
 		});
-		
-		
 	};
 	
 	/**
@@ -148,7 +288,17 @@ var AttrInit = (function() {
 						+ '<li style="padding-left: 10px;">'
 							+ 'Example: !agi Init'
 						+ '</li>'
+						+ '<div>'
+							+ '<span style="font-weight: bold;">!agi -calc</span>'
+						+ '</div>'
+						+ '<li style="padding-left: 10px;">'
+							+ 'Syntax: !agi -calc [attr]'
+						+ '</li>'
+						+ '<li style="padding-left: 10px;">'
+							+ 'Example: !agi -calc init'
+						+ '</li>'
 						+ '<br><p>If the attribute name does not exist in the connected journal or is not given a numeric value, it will not be included in the initiative group.</p>'
+						+ '<br><p><span style="font-weight: bold">!agi -calc</span> will compute formulae such as other attributes and even attributes from other journals will full nesting support</p>'
 					+ '</div>'
 				+ '</div>';
 		
@@ -180,6 +330,9 @@ var AttrInit = (function() {
 			args = args.replace('!agi','').trim();
 			if (args.indexOf('-help') === 0) {
 				showHelp();
+			} else if (args.indexOf('-calc') === 0) {
+				args = args.replace('-calc','').trim();
+				attrCalcAdd(args,selected);
 			} else {
 				attrAdd(args,selected);
 			}
