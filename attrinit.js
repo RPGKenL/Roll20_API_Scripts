@@ -178,7 +178,7 @@ var AttrInit = (function() {
 						.value();
 					var baseroll = _.findWhere(line.rolls, {type: 'R', dice: 1, sides: 20}).results[0].v;
 					var mod = _.findWhere(line.rolls, {type: 'M'}).expr;
-					var mod = mod.replace('+','');
+					mod = mod.replace('+','');
 					cc.call({id: e.id, result: {baseroll: baseroll, mod: mod}});
 				} catch (e) {
 					sendFeedback('<span style="color: red;">Error processing roll</span>');
