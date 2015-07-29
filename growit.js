@@ -20,7 +20,7 @@
  */
 
 var GrowIt = {
-    version: 0.6,
+    version: 0.6.1,
     author: 'Ken L.',
     
     bonusEnum: Object.freeze({
@@ -107,6 +107,7 @@ var GrowIt = {
                 token.set('width',width);
             }
             token.set('layer','map');
+			toFront(token); 
         } else {
             this.sendFeedback('Bad syntax');
             this.showHelp();
