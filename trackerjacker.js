@@ -1237,7 +1237,7 @@ var TrackerJacker = (function() {
 			midcontent = ''; 
 
 		if (!fav) {
-			sendError('<b>"'+statusName+'"</b>');
+			sendError('<b>"'+statusName+'"</b> is not a known favorite status');
 			return; 
 		}
 
