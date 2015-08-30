@@ -2362,6 +2362,13 @@ var TrackerJacker = (function() {
 					+ '<li style="padding-left: 10px;">'
 						+ 'Displays favorite statuses with options to apply or edit.'
 					+ '</li>'
+					+ '<br>'
+					+ '<div style="font-weight: bold;">'
+						+ '!eot'
+					+ '</div>'
+					+ '<li style="padding-left: 10px;">'
+						+ 'Ends a player\'s turn and advances the tracker if the player has control of the current turn\'s token. Player usable command.'
+					+ '</li>'
 				+ '</div>'
    			+ '</div>'; 
 
