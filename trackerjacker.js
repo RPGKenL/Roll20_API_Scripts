@@ -1020,8 +1020,12 @@ var TrackerJacker = (function() {
 			+ '</div>'
 			+ '<table width="100%">';
 		content += midcontent; 
-		content += '</table></div>'; 
-		return content; 
+		content += '</table>'; 
+		content += /*'<div style="border-top: 1px solid black;">'
+					+ '<a style="font-weight: bold" href="!tj -addstatus ?{name}:?{duration}:?{direction}:?{message}"> Add Status</a>'
+					+ '<br><a style="font-weight: bold" href="!tj -listfavs"> Apply Favorite</a>'
+				+ '</div>'+*/'</div>'; 
+		return content;
 	}; 
 
 	/**
@@ -1669,7 +1673,6 @@ var TrackerJacker = (function() {
 			_.each(idString, function(e) {
 				selection.push({_id: e, _type: 'graphic'}); 	
 			}); 
-			log (JSON.stringify(selection)); 
 			doRemoveStatus(statusName,selection); 
 			return; 
 		} else if (action !== 'change') {
