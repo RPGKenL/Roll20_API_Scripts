@@ -2250,7 +2250,7 @@ var TrackerJacker = (function() {
 	 * Perform player controled turn advancement (!eot)
 	 */ 
 	var doPlayerAdvanceTurn = function(senderId) {
-		if (!senderId || flags.tj_state === TJ_StateEnum.STOPPED) 
+		if (!senderId || flags.tj_state !== TJ_StateEnum.ACTIVE) 
 			{return;}
 		var turnorder = Campaign().get('turnorder');
 		if (!turnorder) 
