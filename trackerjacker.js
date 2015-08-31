@@ -2357,7 +2357,7 @@ var TrackerJacker = (function() {
 						+ '!tj -edit'
 					+ '</div>'
 					+ '<li style="padding-left: 10px;">'
-						+ 'Edit statuses on the token'
+						+ 'Edit statuses on the selected tokens'
 					+ '</li>'
 					+ '<br>' 
 					+ '<div style="font-weight: bold;">'
