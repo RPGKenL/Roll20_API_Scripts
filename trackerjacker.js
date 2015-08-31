@@ -49,7 +49,7 @@
  
 var TrackerJacker = (function() {
 	'use strict'; 
-	var version = 1.00,
+	var version = 1.01,
 		author = 'Ken L.';
 	
 	var TJ_StateEnum = Object.freeze({
@@ -2089,7 +2089,7 @@ var TrackerJacker = (function() {
 			prepareTurnorder();
 		} else {
 			if(!_.find(turnorder, function(e,i) {
-				if (e.id === -1 && e.pr === -100 && e.custom.match(/Round\s*\d+/)) {
+				if (parseInt(e.id) === -1 && parseInt(e.pr) === -100 && e.custom.match(/Round\s*\d+/)) {
 					e.custom = 'Round ' + initial;
 					return true;
 				}
@@ -2125,9 +2125,13 @@ var TrackerJacker = (function() {
 	 * linked journal, or by direct token control.
 	 */ 
 	var isTokenController = function(token,senderId) {
-		if (token && _.find(token.get('controlledby').split(','),function(e){return e===senderId;}))
-			{return true;}
-		else if (token && token.get('represents')) {
+		if (!token) {
+			return false; 
+		} else if (playerIsGM(senderId)) {
+			return true; 	
+		} else if (_.find(token.get('controlledby').split(','),function(e){return e===senderId;})) {
+			return true;
+		} else if (token.get('represents')) {
 			var journal = getObj('character',token.get('represents'));
 			if (journal && _.find(journal.get('controlledby').split(','),function(e){return e===senderId;})) {
 				return true;
@@ -2425,7 +2429,7 @@ var TrackerJacker = (function() {
 			} else if (args.indexOf('-pause') === 0) {
 				doPauseTracker();
 			} else if (args.indexOf('-reset') === 0) {
-				args = args.replace('-resetTurn','').trim();
+				args = args.replace('-reset','').trim();
 				doResetTurnorder(args);
 			} else if (args.indexOf('-addstatus') === 0) {
 				args = args.replace('-addstatus','').trim();
