@@ -2555,6 +2555,7 @@ var TrackerJacker = (function() {
 		on('change:campaign:initiativepage',handleChangeCampaignInitativepage);
 		on('change:graphic:top',handleChangeGraphicMovement);
 		on('change:graphic:left',handleChangeGraphicMovement);
+		on('change:graphic:layer',handleChangeGraphicMovement);
 	};
  
 	return {
