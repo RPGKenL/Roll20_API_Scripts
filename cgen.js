@@ -45,7 +45,7 @@
  */
 
 var CreatureGenPF = {
-	version: 1.30,
+	version: 1.31,
 	author: "Ken L.",
 	contributers: "Andy W., Shu Zong C., Carlos R. L. Rodrigues",
 	debugLvl: 1,
@@ -3170,6 +3170,8 @@ var CreatureGenPF = {
 					+ '<div style="color: blue; font-size: 100%; font-style: italic: font-weight: bold">(Time elapsed: '+tTime.toFixed(2)+'s)</div>');
 				CreatureGenPF.locked = false; 
 			}, workData: []}); 
+		} else {
+			CreatureGenPF.locked = false; 
 		}
 
 		CreatureGenPF.doDelayedWork(CreatureGenPF.workList); 
