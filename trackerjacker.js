@@ -49,7 +49,7 @@
  
 var TrackerJacker = (function() {
 	'use strict'; 
-	var version = 1.01,
+	var version = 1.05,
 		author = 'Ken L.',
 		pending = null;
 	
