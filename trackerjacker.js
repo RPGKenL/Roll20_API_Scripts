@@ -50,13 +50,19 @@
 var TrackerJacker = (function() {
 	'use strict'; 
 	var version = 1.01,
-		author = 'Ken L.';
+		author = 'Ken L.',
+		pending = null;
 	
 	var TJ_StateEnum = Object.freeze({
 		ACTIVE: 0,
 		PAUSED: 1,
 		STOPPED: 2,
 		FROZEN: 3
+	});
+
+	var PR_Enum = Object.freeze({
+		YESNO: 'YESNO',
+		CUSTOM: 'CUSTOM',
 	});
 
 	var fields = {
@@ -73,8 +79,7 @@ var TrackerJacker = (function() {
 	}; 
 	
 	var flags = {
-		tj_state: TJ_StateEnum.STOPPED,
-		image: true,
+		tj_state: TJ_StateEnum.STOPPED, image: true,
 		rotation: true,
 		animating: false,
 		archive: false,
@@ -151,6 +156,137 @@ var TrackerJacker = (function() {
 		{name:"archery-target",img:'https://s3.amazonaws.com/files.d20.io/images/8074237/ei4JHB51P6az3slwgZmTEw/thumb.png?1425598739'}
 	]);
 
+	var TrackerJacker_tmp = (function() {
+		var templates = {
+			button: _.template('<a style="display: inline-block; font-size: 100%; color: black; padding: 3px 3px 3px 3px; margin: 2px 2px 2px 2px; border: 1px solid black; border-radius: 0.5em; font-weight: bold; text-shadow: -1px -1px 1px #FFF, 1px -1px 1px #FFF, -1px 1px 1px #FFF, 1px 1px 1px #FFF; background-color: #C7D0D2;" href="<%= command %>"><%= text %></a>'),
+			confirm_box: _.template('<div style="font-weight: bold; background-color: #FFF; text-align: center; box-shadow: rgba(0,0,0,0.4) 3px 3px; border-radius: 1em; border: 1px solid black; margin: 5px 5px 5px 5px; padding: 2px 2px 2px 2px;">'
+					+ '<div style="border-bottom: 1px solid black;">'
+						+ '<%= message %>'
+					+ '</div>'
+					+ '<table style="text-align: center; width: 100%">'
+						+ '<tr>'
+							+ '<td>'
+								+ '<%= confirm_button %>'
+							+ '</td>'
+							+ '<td>'
+								+ '<%= reject_button %>'
+							+ '</td>'
+						+ '</tr>'
+					+ '</table>'
+				+ '</div>')
+		};
+
+		return {
+			getTemplate: function(tmpArgs, type) {
+				var retval;
+				
+				retval = _.find(templates, function(e,i) {
+					if (type === i) {
+						{return true;}
+					}
+				})(tmpArgs);
+				
+				return retval;
+			},
+			
+			hasTemplate: function(type) {
+				if (!type) 
+					{return false;}
+				return !!_.find(_.keys(templates), function(elem) {
+					{return (elem === type);}
+				});
+				
+			}
+		};
+	}());
+
+	/**
+	 * PendingResponse constructor
+	 */
+	var PendingResponse = function(type,func,args) {
+		if (!type || !args) 
+			{return undefined;}
+		
+		this.type = type;
+		this.func = func;
+		this.args = args;
+	};
+	
+	/**
+	 * PendingResponse prototypes
+	 */
+	PendingResponse.prototype = {
+		getType: function() { return this.type; },
+		getArgs: function() { return this.args; },
+		doOps: function(carry) {
+			if (!this.func) 
+				{return null;}
+			return this.func(this.args,carry); 
+		},
+		doCustomOps: function(args) { return this.func(args); },
+	};
+
+	/**
+	 * Add a pending response to the stack, return the associated hash
+	 * TODO make the search O(1) rather than O(n)
+	 */
+	var addPending = function(pr,hash) {
+		if (!pr) 
+			{return null;}
+		if (!hash) 
+			{hash = genHash(pr.type+pr.args,pending);}
+		var retval = hash;
+		if (pending) {
+			if (pending[hash]) {
+				throw 'hash already in pending queue';
+			}
+			pending[hash] = {};
+			pending[hash].pr = pr; 
+		} else {
+			pending = {};
+			pending[hash] = {};
+			pending[hash].pr = pr; 
+		}
+		return retval;
+	};
+	
+	/**
+	 * find a pending response
+	 */
+	var findPending = function(hash) {
+		var retval = null;
+		if (!pending)
+			{return retval;}
+		retval = pending[hash]; 
+		if (retval) 
+			{retval = retval.pr;}
+		return retval;
+	};
+	
+	/**
+	 * Clear pending responses
+	 */
+	var clearPending = function(hash) {
+		if (pending[hash])
+			{delete pending[hash]; }
+	};
+
+	/**
+	* @author lordvlad @stackoverflow
+	* @contributor Ken L.
+	*/
+	var genHash = function(seed,hashset) {
+		if (!seed) 
+			{return null;}
+		seed = seed.toString();
+		var hash = seed.split("").reduce(function(a,b) {a=((a<<5)-a)+b.charCodeAt(0);return a&a;},0);
+		if (hashset && hashset[hash]) {
+			var d = new Date();
+			return genHash((hash+d.getTime()*Math.random()).toString(),hashset);
+		}
+		return hash;
+	}; 
+
 	/**
 	 * Init
 	 */
@@ -201,7 +337,7 @@ var TrackerJacker = (function() {
 			idx = str.indexOf(expr);
 			pre = str.substring(0,idx);
 			post = str.substring(idx+expr.length);
-		} else { return str;}
+		} else { return retval;}
 		
 		return pre+"[["+expr+"]]"+getFormattedRoll(post);
 	};
@@ -222,7 +358,6 @@ var TrackerJacker = (function() {
 		if (!locHint) 
 			{locHint = 0;}
 		var retval = target,
-			expr = target,
 			re = /\d|[\+\-]|d/,
 			loc = -1, 
 			start = 0, 
@@ -335,16 +470,22 @@ var TrackerJacker = (function() {
 	var updateStatusDisplay = function(curToken) {
 		if (!curToken) {return;}
 		var effects = getStatusEffects(curToken),
+			gstatus,
 			statusArgs,
 			toRemove = [],
-			content = ''; 
+			content = '',
+			hcontent = ''; 
 
 		_.each(effects, function(e) {
 			if (!e) {return;}
 			statusArgs = e;
+			gstatus = statusExists(e.name); 
 			statusArgs.duration = parseInt(statusArgs.duration) + 
 				parseInt(statusArgs.direction);
-			content += makeStatusDisplay(e);
+			if (gstatus.marker)
+				{content += makeStatusDisplay(e);}
+			else
+				{hcontent += makeStatusDisplay(e)}
 		});
 		effects = _.reject(effects,function(e) {
 			if (e.duration <= 0) {
@@ -356,7 +497,7 @@ var TrackerJacker = (function() {
 		});
 		setStatusEffects(curToken,effects);
 		updateAllTokenMarkers(toRemove); 			
-		return content;
+		return {public: content, hidden: hcontent};
 	};
 	
 	/**
@@ -466,7 +607,7 @@ var TrackerJacker = (function() {
 		var tracker,
 			trackerpos; 
 		
-		if (tracker = _.find(turnorder, function(e,i) {if (parseInt(e.id) === -1 && parseInt(e.pr) === -100 && e.custom.match(/Round\s*\d+/)){trackerpos = i;return true;}})) {
+		if (!!(tracker = _.find(turnorder, function(e,i) {if (parseInt(e.id) === -1 && parseInt(e.pr) === -100 && e.custom.match(/Round\s*\d+/)){trackerpos = i;return true;}}))) {
 			
 			var indicator,
 				graphic = findTrackerGraphic(),
@@ -544,14 +685,12 @@ var TrackerJacker = (function() {
 
 		var content = '',
 			globalStatus = statusExists(statusName),
-			effects,
-			status,
 			mImg; 
 
 		if (!statusName)
-			{return '<span style="color: red;">Invalid syntax</span>'; }
+			{return '<span style="color: red; font-weight: bold;">Invalid syntax</span>'; }
 		if (!globalStatus)
-			{return '<span style="color: red;">Status no longer exists</span>'; }
+			{return '<span style="color: red; font-weight: bold;">Status no longer exists</span>'; }
 
 		mImg = _.findWhere(statusMarkers,{name: globalStatus.marker}); 
 		if (mImg) 
@@ -634,7 +773,7 @@ var TrackerJacker = (function() {
 			gstatus,
 			markerdef;   
 
-		_.each(tuple, function(e,i) {
+		_.each(tuple, function(e) {
 			gstatus = statusExists(e.statusName);
 			if (!gstatus) 
 				{return;}
@@ -680,18 +819,18 @@ var TrackerJacker = (function() {
 	/**
 	 * Build marker selection display
 	 */ 
-	var makeMarkerDisplay = function(statusName,favored) {
+	var makeMarkerDisplay = function(statusName,favored,custcommand) {
 		var markerList = '',
 			takenList = '',
-			command = '',
+			command,
 			taken,
 			content;   
-		
-		_.each(statusMarkers,function(e,i,l) {
+
+		_.each(statusMarkers,function(e) {
 			if (!favored)
-				{command = '!tj -marker ' + e.name + ' %% ' + statusName;}
+				{command = (!custcommand ? ('!tj -marker ' + e.name + ' %% ' + statusName) : (custcommand+e.name));}
 			else
-				{command = '!tj -marker ' + e.name + ' %% ' + statusName + ' %% ' + 'fav';}
+				{command = (!custcommand ? ('!tj -marker ' + e.name + ' %% ' + statusName + ' %% ' + 'fav') : (custcommand+e.name));}
 			//n*m is evil
 			if (!favored && (taken = _.findWhere(state.trackerjacker.statuses,{marker: e.name}))) {
 				takenList += '<div style="float: left; padding: 1px 1px 1px 1px; width: 25px; height: 25px;">' 
@@ -826,7 +965,6 @@ var TrackerJacker = (function() {
 	var makeFavoriteConfig = function() {
 		var midcontent = '',
 			content = '',
-			gstatus,
 			markerdef; 
 
 		_.each(state.trackerjacker.favs,function(e) {
@@ -961,7 +1099,9 @@ var TrackerJacker = (function() {
 				+ (favored ? '':('<tr>'
 					+ '<td colspan="2">'
 						//+ '<a href="!CreatureGen -help">cookies</a>' 
-						+ '<a style="font-weight: bold" href="!tj -addfav '+statusName+' %% '+status.duration+' %% '+status.direction+' %% '+status.msg+' %% '+globalStatus.marker+'"> Add to Favorites</a>'
+						//+ '<a style="font-weight: bold" href="!tj -addfav '+statusName+' %% '+status.duration+' %% '+status.direction+' %% '+status.msg+' %% '+globalStatus.marker+'"> Add to Favorites</a>'
+						+ TrackerJacker_tmp.getTemplate({command: '!tj -addfav '+statusName+' %% '+status.duration+' %% '+status.direction+' %% '+status.msg+' %% '+globalStatus.marker, text: 'Add to Favorites'},'button')
+
 					+ '</td>' 
 				+ '</tr>'))
 			+ '</table>' 
@@ -1099,9 +1239,9 @@ var TrackerJacker = (function() {
 			{return undefined;}
 		if (typeof(turnorder) === 'string') 
 			{turnorder = JSON.parse(turnorder);}
-		if (turnorder[0].id !== -1)
+		if (turnorder && turnorder.length > 0 && turnorder[0].id !== -1)
 			{return getObj('graphic',turnorder[0].id);}
-		return undefined;
+		return;
 	};
 	
 	/**
@@ -1121,11 +1261,15 @@ var TrackerJacker = (function() {
 		if (!curToken) 
 			{return;}
 		var disp = makeTurnDisplay(curToken);
-		disp += statusRiders;
-		if (curToken.get('layer') !== 'objects')
-			{sendFeedback(disp);}
-		else
-			{sendPublic(disp);}
+		disp += statusRiders.public;
+		if (curToken.get('layer') !== 'objects') {
+			disp += statusRiders.hidden; 
+			sendFeedback(disp);
+		} else {
+			sendPublic(disp);
+			if (statusRiders.hidden)
+				{sendFeedback(statusRiders.hidden);}
+		}
 	}; 
 	
 	/**
@@ -1162,8 +1306,7 @@ var TrackerJacker = (function() {
 					var graphic,
 						curToken = getObj('graphic',currentTurn.id),
 						priorToken = getObj('graphic',priororder[0].id),
-						maxsize = 0,
-						curPage; 
+						maxsize = 0;
 					if (!curToken) 
 						{return;}
 
@@ -1229,7 +1372,6 @@ var TrackerJacker = (function() {
 		var fav = favoriteExists(statusName),
 			markerdef, 
 			curToken,
-			preExisting,
 			effectId,
 			effectList,
 			status,
@@ -1304,7 +1446,7 @@ var TrackerJacker = (function() {
 		if (status && !status.marker && fav.marker)
 			{doDirectMarkerApply(markerdef.name+' %% '+fav.name); }
 		else if (status && !status.marker)
-			{content += '<br><div style="text-align: center;"><a href="!tj -dispmarker '+fav.name+'">Choose Marker</a></div>';}
+			{content += '<br><div style="text-align: center;">'+TrackerJacker_tmp.getTemplate({command: '!tj -dispmarker '+fav.name, text: 'Choose Marker'},'button')+'</div>';}
 
 		updateAllTokenMarkers(); 
 		content += '</div>'; 
@@ -1370,7 +1512,7 @@ var TrackerJacker = (function() {
 			+ '<br>Duration: ' + duration
 			+ '<br>Direction: ' + direction 
 			+ (msg ? ('<br>Message: ' + msg):'')
-			+ (marker ? '':('<br><div style="text-align: center;"><a href="!tj -dispmarker '+name+' %% fav">Choose Marker</a></div>')); 
+			+ (marker ? '':('<br><div style="text-align: center;">'+TrackerJacker_tmp.getTemplate({command: '!tj -dispmarker '+name+ ' %% fav', text: 'Choose Marker'},'button')+'</div>')); 
 		content += '</div>'; 
 
 		sendFeedback(content); 
@@ -1416,14 +1558,18 @@ var TrackerJacker = (function() {
 		
 		args = args.split(':');
 		
-		if (args.length <3 || args.length > 4) {
+		if (args.length <3 || args.length > 5) {
 			sendError('Invalid status item syntax');
 			return;
 		}
 		var name = args[0],
 			duration = parseInt(args[1]),
 			direction = parseInt(args[2]),
-			msg = args[3];
+			msg = args[3],
+			marker = args[4];
+
+		if (marker === 'undefined')
+			{marker = false;}
 
 		if (typeof(name) === 'string')
 			{name = name.toLowerCase();}
@@ -1432,12 +1578,17 @@ var TrackerJacker = (function() {
 			sendError('Invalid status item syntax');
 			return;
 		}
+
+		if (marker && (!_.find(statusMarkers, function(e) { return e.name === marker; }) 
+		|| !!_.find(state.trackerjacker.statuses, function(e) {return e.name === e.marker;}))) {
+			sendError('Marker invalid or already in use'); 
+			return; 
+		}
 		
 		var curToken,
 			effectId,
 			effectList,
 			status,
-			preExisting,
 			content = '',
 			midcontent = '';
 
@@ -1455,7 +1606,7 @@ var TrackerJacker = (function() {
 					name: name,
 					duration: duration,
 					direction: direction,
-					msg: msg,
+					msg: msg
 				});
 				updateGlobalStatus(name,undefined,1);
 			} else {
@@ -1463,7 +1614,7 @@ var TrackerJacker = (function() {
 					name: name,
 					duration: duration,
 					direction: direction,
-					msg: msg,
+					msg: msg
 				});
 				updateGlobalStatus(name,undefined,1);
 			}
@@ -1483,8 +1634,15 @@ var TrackerJacker = (function() {
 			+ '<br>Direction: ' + direction + (msg ? ('<br>Message: ' + msg):'')
 			+ '<br><br><span style="font-style: normal;">Status placed on the following:</span><br>' ;
 		content += midcontent; 
-		if ((status = statusExists(name.toLowerCase())) && !status.marker)
-			{content += '<br><div style="text-align: center;"><a href="!tj -dispmarker '+name+'">Choose Marker</a></div>';}
+
+		status = statusExists(name.toLowerCase()); 
+		if (status && !status.marker) {
+			if (marker)
+				{status.marker = marker;}
+			else
+				{content += '<br><div style="text-align: center;">'+TrackerJacker_tmp.getTemplate({command: '!tj -dispmarker '+name, text: 'Choose Marker'},'button')+'</div>';}
+		}
+
 		content += '</div>'; 
 		updateAllTokenMarkers(); 
 		sendFeedback(content);
@@ -1735,7 +1893,6 @@ var TrackerJacker = (function() {
 			idString = args[3],
 			gstatus = statusExists(statusName),
 			effectList,
-			statusGroup = [],
 			content = '',
 			midcontent,
 			errMsg;
@@ -1780,7 +1937,7 @@ var TrackerJacker = (function() {
 					return !_.contains(idString,n); 
 				})
 				.value(); 
-			_.each(idString, function(e,i) {
+			_.each(idString, function(e) {
 				effectList = getStatusEffects(getObj('graphic',e)); 
 				_.find(effectList,function(f) {
 					if (f.name === statusName) {
@@ -1833,6 +1990,249 @@ var TrackerJacker = (function() {
 		
 		if (midcontent)
 			{sendFeedback(content);}
+	}; 
+
+	/**
+	 * Add player statuses
+	 */
+	var doPlayerAddStatus = function(args, selection, senderId) {
+		if (!args) 
+			{return;}
+		if (!selection) {
+			sendResponseError('Invalid selection');
+			return;
+		}
+		
+		args = args.split(':');
+		
+		if (args.length <3 || args.length > 4) {
+			sendResponseError('Invalid status item syntax');
+			return;
+		}
+		var name = args[0],
+			duration = parseInt(args[1]),
+			direction = parseInt(args[2]),
+			msg = args[3],
+			statusArgs = {},
+			statusArgsString = '',
+			status,
+			markerdef,
+			hashes = [],
+			curToken,
+			pr_choosemarker,
+			pr_nomarker,
+			choosemarker_args = {},
+			nomarker_args = {},
+			content = '',
+			midcontent = '',
+			d = new Date();
+
+		if (typeof(name) === 'string')
+			{name = name.toLowerCase();}
+
+		if (isNaN(duration) || isNaN(direction)) {
+			sendResponseError('Invalid status item syntax');
+			return;
+		}
+
+		if (!!(status=statusExists(name))) {
+			markerdef = _.findWhere(statusMarkers,{name: status.marker});
+		}
+
+		statusArgs.name = name;
+		statusArgs.duration = duration;
+		statusArgs.direction = direction;
+		statusArgs.msg = msg;
+		statusArgs.marker = (markerdef ? markerdef.name:undefined); 
+		statusArgsString = name + ' @ ' + duration + ' @ ' + direction + ' @ ' + msg; 
+
+		hashes.push(genHash(d.getTime()*Math.random(),pending));
+		hashes.push(genHash(d.getTime()*Math.random(),pending));
+		choosemarker_args.hlist = hashes; 
+		choosemarker_args.statusArgs = statusArgs;
+		choosemarker_args.statusArgsString = statusArgsString; 
+		choosemarker_args.senderId = senderId;
+		choosemarker_args.selection = selection; 
+		nomarker_args.hlist = hashes; 
+		nomarker_args.statusArgs = statusArgs; 
+		nomarker_args.senderId = senderId; 
+		nomarker_args.selection = selection; 
+
+		pr_choosemarker = new PendingResponse(PR_Enum.CUSTOM,function(args) {
+			var hashes = [],
+				pr_marker,
+				content; 
+
+			hashes.push(genHash(d.getTime()*Math.random(),pending));
+
+			pr_marker = new PendingResponse(PR_Enum.CUSTOM,function(args, carry) {
+				args.statusArgs.marker = carry;
+				doDispPlayerStatusAllow(args.statusArgs,args.selection,args.senderId); 
+
+			},args); 
+			addPending(pr_marker,hashes[0]); 
+
+			content = makeMarkerDisplay(undefined,false,'!tj -relay hc% ' 
+				+ hashes[0] 
+				+ ' %% ');
+
+			sendResponse(args.senderId,content); 
+			_.each(args.hlist,function(e) {
+				clearPending(e) ;
+			});
+		},choosemarker_args);
+
+		pr_nomarker = new PendingResponse(PR_Enum.CUSTOM,function(args) {
+			sendResponse('<span style="color: orange; font-weight: bold;">Request sent for \''+statusArgs.name+'\'</span>'); 
+			doDispPlayerStatusAllow(args.statusArgs,args.selection,args.senderId); 	
+			_.each(args.hlist,function(e) {
+				clearPending(e) ;
+			});
+		},nomarker_args); 
+
+		addPending(pr_choosemarker,hashes[0]);
+		addPending(pr_nomarker,hashes[1]); 
+
+
+		_.each(selection,function(e) {
+			curToken = getObj('graphic', e._id);
+			if (!curToken || curToken.get('_subtype') !== 'token' || curToken.get('isdrawing'))
+				{return;}
+			midcontent += '<div style="width: 40px; height 40px; display: inline-block;"><img src="'+curToken.get('imgsrc')+'"></div>'; 
+		});
+
+		content += '<div style="font-weight: bold; background-color: '+design.statusbgcolor+'; border: 2px solid #000; box-shadow: rgba(0,0,0,0.4) 3px 3px; border-radius: 0.5em;">'
+			+ '<div style="text-align: center; color: '+design.statuscolor+'; border-bottom: 2px solid black;">'
+					+ '<span style="font-weight: bold; font-size: 120%">Request Add Status</span>'
+				+ '</div>'
+			+ 'Name: ' + '<span style="color:'+design.statuscolor+';">'+name+'</span>'
+			+ '<br>Marker: ' + (markerdef ? ('<img src="'+markerdef.img+'"></img>'):'none')
+			+ '<br>Duration: ' + duration
+			+ '<br>Direction: ' + direction + (msg ? ('<br>Message: ' + msg):'')
+			+ '<br><br><span style="font-style: normal;">Status requested to be placed on the following:</span><br>'; 
+		content += midcontent; 
+		content += (markerdef ? '': (
+				'<div style="text-align: center;">'
+				+ TrackerJacker_tmp.getTemplate({command: '!tj -relay hc% ' + hashes[0], text: 'Choose Marker'},'button')
+				+ TrackerJacker_tmp.getTemplate({command: '!tj -relay hc% ' + hashes[1], text: 'Request Without Marker'},'button')
+				+ '</div>'
+			));
+		content += '</div>'; 
+		sendResponse(senderId,content); 
+
+		if (markerdef)
+			{doDispPlayerStatusAllow(statusArgs,selection,senderId);}
+	};
+
+	/**
+	 * make dialog to allow/disallow a player status add
+	 */ 
+	var doDispPlayerStatusAllow = function(statusArgs,selection,senderId) {
+		var hashes = [],
+			confirmArgs = {},
+			rejectArgs = {},
+			pr_confirm,
+			pr_reject,
+			content = '',
+			midcontent = '',
+			player,
+			markerdef,
+			curToken,
+			d = new Date();
+
+		player = getObj('player',senderId);
+		if (!player) {
+			sendError('Non-existant player requested to add a status?');
+			return; 
+		}
+
+		_.each(selection,function(e) {
+			curToken = getObj('graphic', e._id);
+			if (!curToken || curToken.get('_subtype') !== 'token' || curToken.get('isdrawing'))
+				{return;}
+			midcontent += '<div style="width: 40px; height 40px; display: inline-block;"><img src="'+curToken.get('imgsrc')+'"></div>'; 
+		});
+
+		hashes.push(genHash(d.getTime()*Math.random(),pending));
+		hashes.push(genHash(d.getTime()*Math.random(),pending));
+		confirmArgs.hlist = hashes;
+		confirmArgs.statusArgs = statusArgs; 
+		confirmArgs.selection = selection; 
+		confirmArgs.senderId = senderId; 
+		rejectArgs.hlist = hashes;
+		rejectArgs.statusArgs = statusArgs; 
+		rejectArgs.selection = selection; 
+		rejectArgs.senderId = senderId;
+
+		pr_confirm = new PendingResponse(PR_Enum.YESNO,function(args) {
+			var argStr = args.statusArgs.name
+					+ ':' + args.statusArgs.duration
+					+ ':' + args.statusArgs.direction
+					+ ':' + args.statusArgs.msg
+					+ ':' + args.statusArgs.marker,
+				markerdef; 
+			markerdef = _.findWhere(statusMarkers,{name: statusArgs.marker});
+
+			if (statusExists(args.statusArgs.name)) {
+				doAddStatus(argStr,selection); 
+			} else if(!!!_.find(state.trackerjacker.statuses,function(e){if (e.marker === args.statusArgs.marker){return true;}})) {
+				doAddStatus(argStr,selection); 
+			} else {
+				sendError('Marker <img src="'+markerdef.img+'"></img> is already in use, cannot use it for \'' + args.statusArgs.name + '\' '); 
+				sendResponseError(args.senderId,'Status application \''+statusArgs.name+'\' rejected, marker <img src="'+markerdef.img+'"></img> already in use'); 
+				return; 
+			}
+			sendResponse(args.senderId,'<span style="color: green; font-weight: bold;">Status application for \''+statusArgs.name+'\' accepted</span>'); 
+
+			_.each(args.hlist,function(e) {
+				clearPending(e) ;
+			});
+		},confirmArgs);
+
+		pr_reject = new PendingResponse(PR_Enum.YESNO,function(args) {
+			var player = getObj('player',args.senderId); 
+			if (!player)
+				{sendError('Non-existant player requested to add a status?');}
+			sendResponseError(args.senderId,'Status application for \''+statusArgs.name+'\' rejected'); 
+			sendError('Rejected status application for \''+statusArgs.name+'\' from ' + player.get('_displayname')); 
+
+			_.each(args.hlist,function(e) {
+				clearPending(e) ;
+			});
+		},rejectArgs);
+
+		addPending(pr_confirm,hashes[0]);
+		addPending(pr_reject,hashes[1]); 
+
+
+		markerdef = _.findWhere(statusMarkers,{name: statusArgs.marker});
+
+		content += '<div style="font-weight: bold; background-color: '+design.statusbgcolor+'; border: 2px solid #000; box-shadow: rgba(0,0,0,0.4) 3px 3px; border-radius: 0.5em;">'
+			+ '<div style="text-align: center; color: '+design.statuscolor+'; border-bottom: 2px solid black;">'
+					+ '<span style="font-weight: bold; font-size: 120%">Request Add Status</span>'
+				+ '</div>'
+			+ '<span style="color:'+design.statuscolor+';">'+ player.get('_displayname') + '</span> requested to add the following status...<br>'
+			+ '<br>Name: ' + '<span style="color:'+design.statuscolor+';">'+statusArgs.name+'</span>'
+			+ '<br>Marker: ' + (markerdef ? ('<img src="'+markerdef.img+'"></img>'):'none')
+			+ '<br>Duration: ' + statusArgs.duration
+			+ '<br>Direction: ' + statusArgs.direction + (statusArgs.msg ? ('<br>Message: ' + statusArgs.msg):'')
+			+ '<br><br><span style="font-style: normal;">Status requested to be placed on the following:</span><br>'; 
+		content += midcontent; 
+
+		content += '<table style="text-align: center; width: 100%">'
+			+ '<tr>'
+				+ '<td>'
+					+ TrackerJacker_tmp.getTemplate({command: '!tj -relay hc% ' + hashes[0], text: 'Confirm'},'button')
+				+ '</td>'
+				+ '<td>'
+					+ TrackerJacker_tmp.getTemplate({command: '!tj -relay hc% ' + hashes[1], text: 'Reject'},'button')
+				+ '</td>'
+			+ '</tr>'
+		+ '</table>'; 
+		// GM feedback
+		sendFeedback(content); 
+		// Player feedback
+		sendResponse(senderId,'<span style="color: orange; font-weight: bold;">Request sent for \''+statusArgs.name+'\'</span>'); 
 	}; 
 
 	/**
@@ -2088,7 +2488,7 @@ var TrackerJacker = (function() {
 		if (!turnorder) {
 			prepareTurnorder();
 		} else {
-			if(!_.find(turnorder, function(e,i) {
+			if(!_.find(turnorder, function(e) {
 				if (parseInt(e.id) === -1 && parseInt(e.pr) === -100 && e.custom.match(/Round\s*\d+/)) {
 					e.custom = 'Round ' + initial;
 					return true;
@@ -2276,6 +2676,34 @@ var TrackerJacker = (function() {
 	}; 
 
 	/**
+	 * Handle Pending Requests
+	 */
+	var doRelay = function(args,senderId) {
+		if (!args) 
+			{return;}
+		var carry,
+			hash; 
+		args = args.split(' %% '); 
+		if (!args) { log(args); return; }
+		hash = args[0];
+		if (hash) {
+			hash = hash.match(/hc% .+/);
+			if (!hash) { log(hash); return; }
+			hash = hash[0].replace('hc% ','');
+			carry = args[1];
+			if (carry)
+				{carry = carry.trim();}
+			var pr = findPending(hash);
+			if (pr) {
+				pr.doOps(carry);
+				clearPending(hash);    
+			} else {
+				sendResponseError(senderId,'Selection Invalidated');
+			}
+		}
+	}; 
+
+	/**
 	 * Show help message
 	 */ 
 	var showHelp = function() {
@@ -2410,6 +2838,31 @@ var TrackerJacker = (function() {
 	};
 
 	/**
+	 * Sends a response
+	 */
+	var sendResponse = function(pid,msg,as,img) {
+		if (!pid || !msg) 
+			{return null;}
+		var player = getObj('player',pid),
+			to; 
+		if (player) {
+			to = '/w "' + player.get('_displayname') + '" ';
+		}
+		else 
+			{throw ('could not find player: ' + to);}
+		var content = to
+				+ '<div style="position: absolute; top: 4px; left: 5px; width: 26px;">'
+					+ '<img src="' + (img ? img:fields.feedbackImg) + '">' 
+				+ '</div>'
+				+ msg;
+		sendChat((as ? as:fields.feedbackName),content);
+	}; 
+
+	var sendResponseError = function(pid,msg,as,img) {
+		sendResponse(pid,'<span style="color: red; font-weight: bold;">'+msg+'</span>',as,img); 
+	}; 
+
+	/**
 	 * Send an error
 	 */ 
 	var sendError = function(msg) {
@@ -2422,8 +2875,7 @@ var TrackerJacker = (function() {
 	var handleChatMessage = function(msg) { 
 		var args = msg.content,
 			senderId = msg.playerid,
-			selected = msg.selected,
-			sender = msg.who.replace(/\(GM\)/,'').trim(); 
+			selected = msg.selected; 
 			
 		if (msg.type === 'api'
 		&& playerIsGM(senderId)
@@ -2481,6 +2933,9 @@ var TrackerJacker = (function() {
 			} else if (args.indexOf('-applyfav') === 0) {
 				args = args.replace('-applyfav','').trim();
 				doApplyFavorite(args,selected); 
+			}  else if (args.indexOf('-relay') === 0) {
+				args = args.replace('-relay','').trim(); 
+				doRelay(args,senderId); 
 			} else if (args.indexOf('-help') === 0) {
 				showHelp(); 
 			} else {
@@ -2490,6 +2945,12 @@ var TrackerJacker = (function() {
 		} else if (msg.type === 'api') {
 			if (args.indexOf('!eot') === 0) {
 				doPlayerAdvanceTurn(senderId);
+			} else if (args.indexOf('!tj -addstatus') === 0) {
+				args = args.replace('!tj -addstatus','').trim();
+				doPlayerAddStatus(args,selected,senderId); 	
+			}  else if (args.indexOf('!tj -relay') === 0) {
+				args = args.replace('!tj -relay','').trim(); 
+				doRelay(args,senderId); 
 			}
 		}
 	};
