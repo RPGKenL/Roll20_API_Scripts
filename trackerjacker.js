@@ -554,8 +554,10 @@ var TrackerJacker = (function() {
 			}
 			effects = getStatusEffects(token);
 			tokenStatusString = token.get('statusmarkers');
-			if (!tokenStatusString)
-				{return;}
+			if (_.isUndefined(tokenStatusString) || tokenStatusString === 'undefined') {
+				log('Unable to get status string for ' + e + ' status string is ' + tokenStatusString); 
+				return;
+			}
 			tokenStatusString = tokenStatusString.split(',');
 			_.each(effects, function(elem) {
 				statusName = elem.name.toLowerCase(); 
