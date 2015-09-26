@@ -44,25 +44,24 @@
  * 
  */
 
-var CreatureGenPF = {
-	version: 1.31,
-	author: "Ken L.",
-	contributers: "Andy W., Shu Zong C., Carlos R. L. Rodrigues",
-	debugLvl: 1,
-	locked: false,
-	unitPixels: 70,
-	workStart: 0,
-	workDelay: 250,
-	workList: [],
-	dmesg: null,
-	warn: null,
-	rawData: null,
-	data: null,
-	creName: null,
-	character: null,
+var CreatureGenPF = (function() {
+	'use strict'; 
+	var version = 1.31,
+		author = "Ken L.",
+		contributers = "Andy W., Shu Zong C., Carlos R. L. Rodrigues",
+		debugLvl = 1,
+		locked = false,
+		unitPixels = 70,
+		workStart = 0,
+		workDelay = 250,
+		workList = [],
+		dmesg,
+		warn,
+		creName,
+		character; 
 	
 	
-	termEnum: Object.freeze({
+	var termEnum = Object.freeze({
 		GENERAL : 1,
 		MONABILITY: 2,
 		SPELL: 3,
@@ -70,29 +69,29 @@ var CreatureGenPF = {
 		SQ: 5,
 		SA: 6,
 		SKILL: 7
-	}),
+	}); 
 	
-	bonusEnum: Object.freeze({
+	var bonusEnum = Object.freeze({
 		SCALAR: 1,
 		SIGN: 2
-	}),
+	}); 
 	
-	urlCondEnum: Object.freeze({
+	var urlCondEnum = Object.freeze({
 		FULL: "FULL",
 		LABEL: "LABEL"
-	}),
+	}); 
 	
-	atkEnum: Object.freeze({
+	var atkEnum = Object.freeze({
 		TITLE: 'TITLE',
 		ATTACK: 'ATTACK',
 		DAMAGE: 'DAMAGE'
-	}),
+	}); 
 	
 	/**
 	 * Various fields that can be changed for customization
 	 * 
 	 */
-	fields: {
+	var fields = {
 		defaultName: "Creature",
 		publicName: "@{name}",
 		publicEm: "/emas ",
@@ -109,9 +108,9 @@ var CreatureGenPF = {
 		urlTermFeat: '<a href="http://www.google.com/cse?cx=006680642033474972217%3A6zo0hx_wle8&q=<<FULL>>"><span style="color: #29220A; font-weight: bold;"><<FULL>></span></a>',
 		urlTermSQ: "", // unused
 		urlTermSA: "", // unused
-		summoner: null,
+		summoner: undefined,
 		shortAtkRiders: false // unused
-	},
+	}; 
 	
 	/**
 	 * div border styles, customize it for your game! 
@@ -119,7 +118,7 @@ var CreatureGenPF = {
 	 * <span [[format text injected here]]> penguins </span>
 	 * <img src="[[image link]]">"
 	 */
-	design: {
+	var design = {
 		feedbackName: 'Ken L.',
 		feedbackImg: 'https://s3.amazonaws.com/files.d20.io/images/3466065/uiXt3Zh5EoHDkXmhGUumYQ/thumb.jpg?1395313520',
 		errorImg: 'https://s3.amazonaws.com/files.d20.io/images/7545187/fjEEs0Jvjz1uy3mGN5A_3Q/thumb.png?1423165317',
@@ -168,9 +167,9 @@ var CreatureGenPF = {
 		genTopImg: 'https://s3.amazonaws.com/files.d20.io/images/7816014/jpO1FF9pA7Ipi__sFQAAMw/thumb.png?1424460680',
 		genMidImg: 'https://s3.amazonaws.com/files.d20.io/images/7816016/0XT65Rctt1imgamKQUO6sg/thumb.png?1424460684',
 		genBotImg: 'https://s3.amazonaws.com/files.d20.io/images/7816023/T6uTWEX4aMDL-78lhSLanw/thumb.png?1424460752',
-	},
+	}; 
 	
-	atkTemplate: '<div class="img" style="column-gap: 0; line-height: 0; position: relative; text-align: center;">'
+	var atkTemplate = '<div class="img" style="column-gap: 0; line-height: 0; position: relative; text-align: center;">'
 					+ '<img src="'+"https://s3.amazonaws.com/files.d20.io/images/7926600/1gnY_LsAt4UHnkJmI3PAlA/thumb.png?1424966062"+'">'
 				+ '</div>'
 				+ '<div style="background-image: url('+"https://s3.amazonaws.com/files.d20.io/images/7926601/79qaHPngD_d9MFVlrNTB8w/thumb.png?1424966067"+'); background-repeat: repeat-y; background-position: center center; text-align: center; padding-left: 7px; padding-right: 7px;">'
@@ -194,9 +193,9 @@ var CreatureGenPF = {
 				+ '</div>'
 				+ '<div class="img" style="column-gap: 0; line-height: 0; position: relative; text-align: center;">'
 					+ '<img src="'+"https://s3.amazonaws.com/files.d20.io/images/7926602/lMjFWWNyFpUlbk80HqkeOQ/thumb.png?1424966073"+'">'
-				+ '</div>',
+				+ '</div>'; 
 				
-	menuTemplate: {
+	var menuTemplate = {
 		boundryImg: _.template('<div class="img" style="column-gap: 0; line-height: 0; position: relative; text-align: center;">'
 					+ '<img src="<%= imgLink %>">'
 				+ '</div>'),
@@ -245,187 +244,184 @@ var CreatureGenPF = {
 		midText: _.template('<%= \'<span \'+ (riders ? (\'style="font-weight: bold; color:#FFFFFF; text-shadow: -1px -1px 1px #000, 1px -1px 1px #000, -1px 1px 1px #000, 1px 1px 1px #000;" class="showtip tipsy" title="\' + riders + \'"\') : \' style="color: #000000;"\') + \'>\' %>'
 					+ '<%= text %>'
 				+'</span>'),
-	},
+	}; 
 	
-	init: function() {
-		var rc = true;
-		this.fields.tmpAtk = this.atkTemplate;
-		if (state.cgen_design) 
-			rc = this.selectDesignTemplate(state.cgen_design.toLowerCase(),true);
-		if (!rc) {
-			log("ERROR: state design template no longer exists, defaulting..");
-			state.cgen_design = null;
-		}
-		if (state.cgen_attack) 
-			rc = this.selectAttackTemplate(state.cgen_attack.toLowerCase(),true);
-		if (!rc) {
-			log("ERROR: state attack template no longer exists, defaulting..");
-			state.cgen_attack = null;
-		}
-	},
+
 	
 	/**
 	 * Select design template
 	 */
-	selectDesignTemplate: function(name, quiet) {
-		var flag = null;
-		if (typeof(CGTmp) != "undefined") {
+	var selectDesignTemplate = function(name, quiet) {
+		var flag;
+		if (typeof(CGTmp) !== "undefined") {
 			try {
-				for (tmp in CGTmp.designTmp) {
-					if (tmp.toLowerCase() == name) {
-						this.design = CGTmp.designTmp[tmp];
-						if (!quiet)
-						this.sendFeedback('<span style="color: #653200; font-weight: bold;">Design template:</span> <b style="color: #009C26;">' + tmp + '</b> has been '
-							+ 'configured for future tokens generated.</span>');
+				for (var tmp in CGTmp.designTmp) {
+					if (tmp.toLowerCase() === name) {
+						design = CGTmp.designTmp[tmp];
+						if (!quiet) {
+							sendFeedback('<span style="color: #653200; font-weight: bold;">Design template:</span> <b style="color: #009C26;">' + tmp + '</b> has been '
+								+ 'configured for future tokens generated.</span>');
+						}
 						state.cgen_design = tmp;
 						flag = true;
 						break;
 					}
 				}
 				if (!flag)
-					this.sendFeedback('<span style="color: #990004;">Design template: \'' + name + '\' does not exist</span>');
+					{sendFeedback('<span style="color: #990004;">Design template: \'' + name + '\' does not exist</span>');}
 			} catch (e) {
 				log(e);
 			}
 		} else {
-			this.sendFeedback('<span style="color: #990004;">No CreatureGen templates found, '
+			sendFeedback('<span style="color: #990004;">No CreatureGen templates found, '
 				+ 'did you load the additional templates script?</span>');
 		}
 		return flag;
-	},
+	}; 
 	
 	/**
 	 * Select attack template
 	 */
-	selectAttackTemplate: function(name, quiet) {
-		var flag = null;
-		if (typeof(CGTmp) != "undefined") {
+	var selectAttackTemplate = function(name, quiet) {
+		var flag;
+		if (typeof(CGTmp) !== "undefined") {
 			try {
-				for (tmp in CGTmp.attackTmp) {
-					if (tmp.toLowerCase() == name) {
-						this.fields.tmpAtk = CGTmp.attackTmp[tmp];
-						if (!quiet)
-						this.sendFeedback('<span style="color: ##155391; font-weight: bold;">Attack template:</span> <b style="color: #009C26;">' + tmp + '</b> has been '
-							+ 'configured for future tokens generated.</span>');
+				for (var tmp in CGTmp.attackTmp) {
+					if (tmp.toLowerCase() === name) {
+						fields.tmpAtk = CGTmp.attackTmp[tmp];
+						if (!quiet) {
+							sendFeedback('<span style="color: ##155391; font-weight: bold;">Attack template:</span> <b style="color: #009C26;">' + tmp + '</b> has been '
+								+ 'configured for future tokens generated.</span>');
+						}
 						state.cgen_attack = tmp;
 						flag = true;
 						break;
 					}
 				}
 				if (!flag)
-					this.sendFeedback('<span style="color: #990004;">Attack template: \'' + name + '\' does not exist</span>');
+					{sendFeedback('<span style="color: #990004;">Attack template: \'' + name + '\' does not exist</span>');}
 			} catch (e) {
 				log(e);
 			}
 		} else {
-			this.sendFeedback('<span style="color: #990004;">No CreatureGen templates found, '
+			sendFeedback('<span style="color: #990004;">No CreatureGen templates found, '
 				+ 'did you load the additional templates script?</span>');
 		}
 		return flag;
-	},
+	}; 
 	
 	/** 
 	 * Object fix to resolve firebase errors 
 	 * 
 	 * @author Shu Zong C.
 	 */
-	fixNewObject: function(obj)
-	{
+	var fixNewObject = function(obj) {
 		var p = obj.changed._fbpath;
 		var new_p = p.replace(/([^\/]*\/){4}/, "/");
 		obj.fbpath = new_p;
 		return obj;
-	},
+	}; 
 	
 	/**
 	 * scan in information from token notes
 	 * 
 	 * @contribuitor Andy W.
 	 */
-	scan: function(token) {
-		var charSheet = null;
-		var data = null;
-		var rawData = null;
+	var scan = function(token) {
+		var charSheet;
+		var data;
+		var rawData;
 		var dispData = "";
 		
-		if (null == token || undefined == token) {
+		if (!token) {
 			throw "No Token selected";
 		}
 		rawData = token.get("gmnotes");
-		this.creLog('RAW: ' + rawData);
-		if (!rawData) {throw "no token notes";}
+		creLog('RAW: ' + rawData);
+		if (!rawData) 
+			{throw "no token notes";}
 		data = rawData.split(/%3Cbr%3E|\\n|<br>/);
 		
 		//clean out all other data except text
 		for (var i = data.length; i >= 0; i--) {
 			if (data[i]) {
-				data[i] = CreatureGenPF.cleanString(data[i]).trim();
-				if (null === data[i].match(/[^\s]/)) {
-					data.splice(i,1)
+				data[i] = cleanString(data[i]).trim();
+				if (!data[i].match(/[^\s]/)) {
+					data.splice(i,1); 
 				}
 			}
 		}
-		
-		this.data = data;
-		// Essential parameters for object creation (mainly the name)
-		this.parseEssential(data);
 
-		dispData = this.formatDisplay(data);
+		// Essential parameters for object creation (mainly the name)
+		parseEssential(data);
+		// if character name already exists, close out.
+		if (findObjs({
+			_type: "character",
+			name: creName,
+		}).length > 0) {
+			addWarning('Character \''+creName+'\' already exists.'); 
+			throw 'Character \''+creName+'\' already exists.'; 
+		}
+
+		dispData = formatDisplay(data);
 		
 		charSheet = createObj("character", {
 			avatar: token.get("imgsrc"),
-			name: this.creName,
+			name: creName,
 			gmnotes: '',
 			archived: false,
 			inplayerjournals: '',
 			controlledby: ''
 		});
-		charSheet = CreatureGenPF.fixNewObject(charSheet);
+		charSheet = fixNewObject(charSheet);
 		if (!charSheet) {
 			throw "ERROR: could not create character sheet";
+		}
+		if (fields.summoner) {
+			charSheet.set('bio','<br clear="both">' + dispData); 
 		}
 		
 		token.set("represents",charSheet.get('_id'));
 		charSheet.set('gmnotes',dispData);
-		
-		this.character = charSheet;
+		character = charSheet;
 		
 		// warn on image source
-		if (charSheet.get('avatar') == '') {
-			this.addWarning('Unable to set avatar to character journal, only images you\'ve '
+		if (charSheet.get('avatar') === '') {
+			addWarning('Unable to set avatar to character journal, only images you\'ve '
 				+ 'uploaded yourself are viable during creation. Auto-population '
 				+ '<i>(drag-drop population)</i> will not be possible without an avatar image.'
 				+ ' You can still upload an avatar manually, or drag an image into the avatar field'
 				+ ' from the image-search.');
 		}
 		
-		// parse up our data set.
-		var specials = null;
 		
+		// parse up our data set.
+		var specials;
+
 		try {
-			this.parseCore(data);
-			
-			specials = this.parseSpecials();
-			this.parseAttacks(specials);
-			this.parseSpells();
-			this.prepToken(token,charSheet);
-			this.parseExtra(specials);
+			parseCore(data);
+			specials = parseSpecials(data);
+			parseAttacks(data,specials);
+			parseSpells(data);
+			parseExtra(data,specials);
+			prepToken(token,charSheet);
 			
 		} catch (e) {
 			log("ERROR when parsing");
 			throw e;
 		}
-	},
+	}
 	
 	/**
 	 * Format display of stat-block
 	 */
-	formatDisplay: function(datum) {
-		if (!datum) return null;
+	var formatDisplay = function(datum) {
+		if (!datum) 
+			{return undefined;}
 		var content = '';
 		
 		_.each(datum, function(e,i,l) {
-			CreatureGenPF.creLog('('+i+') ' + e,1);
+			creLog('('+i+') ' + e,1);
 			if (e.match('DEFENSE')
 			|| e.match('OFFENSE')
 			|| e.match('TACTICS')
@@ -433,22 +429,23 @@ var CreatureGenPF = {
 			|| e.match('STATISTICS')
 			|| e.match('ECOLOGY')
 			|| e.match('SPECIAL ABILITIES'))
-				content += '<div style="font-size: 112%; border-bottom: 1px solid black; border-top: 1px solid black; margin-top: 8px;">'+e+'</b></div>';
+				{content += '<div style="font-size: 112%; border-bottom: 1px solid black; border-top: 1px solid black; margin-top: 8px;">'+e+'</b></div>';}
 			else if (e.match(/\(Ex\)|\(Su\)|\(Sp\)/i))
-				content += '<div>' + e + '</div>'
+				{content += '<div>' + e + '</div>';}
 			else
-				content += e+'<br>'
+				{content += e+'<br>';}
 		});
 		return content;
-	},
+	}; 
 
 	/**
 	 * Prep the token.
 	 * Asynchronous
 	 */
-	prepToken: function(token,character) {
-		if (!token || !character) return null;
-		var name=null,AC=null,hp=null,prep=null;
+	var prepToken = function(token,character) {
+		if (!token || !character) 
+			{return undefined;}
+		var name,AC,hp,prep;
 		var charId = character.get('_id');
 		
 		hp = findObjs({
@@ -474,7 +471,7 @@ var CreatureGenPF = {
 		// Fast vs cb delay
 		if (token.get('gmnotes')) {
 			if (hp && AC && name && prep 
-			&& (prep.get('current').match(/true/i) != null)) {
+			&& (prep.get('current').match(/true/i))) {
 				hp = hp.get('current');
 				AC = AC.get('current');
 				token.set('bar1_value',hp);
@@ -483,13 +480,13 @@ var CreatureGenPF = {
 				token.set('name',name);
 				token.set('showname',true);
 				token.set('light_hassight',true);
-				CreatureGenPF.resizeToken(token,character); 
+				resizeToken(token,character); 
 			}
 		} else {
 			character.get('gmnotes',function(notes) {
 				if (hp && AC && name && prep 
-				&& (prep.get('current').match(/true/i) != null) 
-				&& notes && (notes != '')) {
+				&& (prep.get('current').match(/true/i)) 
+				&& notes && (notes !== '')) {
 					hp = hp.get('current');
 					AC = AC.get('current');
 					token.set('bar1_value',hp);
@@ -501,20 +498,20 @@ var CreatureGenPF = {
 					token.set('gmnotes', notes
 						.replace(/<div[^<>]*>/g,'')
 						.replace(/<\/div>/g,'<br>'));
-					CreatureGenPF.resizeToken(token,character); 
+					resizeToken(token,character); 
 				}
 			});
 		}
-	},
+	}; 
 
 	/**
 	 * Resize Token based on size attribute
 	 */
-	resizeToken: function(token,character) {
+	var resizeToken = function(token,character) {
 		var charId = character.get('_id');
 		var unitSize = 1;
 		var pageScale = getObj('page',token.get('_pageid')).get('snapping_increment');
-		var tsize = parseInt(CreatureGenPF.unitPixels*pageScale); 
+		var tsize = parseInt(unitPixels*(pageScale===0 ? 1:pageScale)); 
 		var size = findObjs({
 			_type: "attribute",
 			name: "Size",
@@ -543,37 +540,39 @@ var CreatureGenPF = {
 				  unitSize = 6; 
 				  break; 
 			default:
-				 CreatureGenPF.creLog('resizeToken: Bad size \''+size+'\' '); 
+				 creLog('resizeToken: Bad size \''+size+'\' '); 
 		}
 		token.set('width',tsize*unitSize); 
 		token.set('height',tsize*unitSize); 
-	},
+	}; 
 
-	parseEssential: function(data) {
+	var parseEssential = function(data) {
 		/* names are tricky as we delimit on CR, last occurance of CR 
 		which has numbers after it TODO use a regex which is shorter*/
 		var namefield = data[0];
 		var delimiter_idx =namefield.lastIndexOf("CR");
 		var fuzzyfield = namefield.substring(delimiter_idx,namefield.length);
-		if ((delimiter_idx <= 0) || (fuzzyfield.match(/\d+|—/g) == null))
-			delimiter_idx = namefield.length;
+		if ((delimiter_idx <= 0) || !(fuzzyfield.match(/\d+|—/g)))
+			{delimiter_idx = namefield.length;}
 		var name = namefield.substring(0,delimiter_idx);
 		name = name.trim().toLowerCase();
-		this.creName = (this.fields.summoner ? (this.fields.summoner.get('_displayname')+'\'s ' + name):name);
-		this.fields.publicName = (this.fields.summoner ? this.creName:this.fields.publicName);
-	},
+		creName = (fields.summoner ? (fields.summoner.get('_displayname')+'\'s ' + name):name);
+		fields.publicName = (fields.summoner ? creName:fields.publicName);
+	}; 
 	
 	/** 
 	 * parse core attributes, AC, HP, etc 
 	 */
-	parseCore: function(data) {
-		if (!data) return;
+	var parseCore = function(data) {
+		if (!data) 
+			{return;}
 
-		if (this.fields.summoner) {
-			this.character.set('controlledby',this.fields.summoner.get('_id'));
+		if (fields.summoner) {
+			character.set('controlledby',fields.summoner.get('_id'));
+			character.set('inplayerjournals',fields.summoner.get('_id')); 
 		}
 
-		var charId = this.character.get('_id');
+		var charId = character.get('_id');
 		var line = "";
 		var lineStartFnd = 0;
 		var lineEndFnd = data.length;
@@ -589,71 +588,71 @@ var CreatureGenPF = {
 		
 		
 		//Flag that this token will be prepped, can be removed by the user
-		this.addAttribute("CGEN",'true','',charId);
-		this.addAttribute("name",this.fields.defaultName,'',charId);
+		addAttribute("CGEN",'true','',charId);
+		addAttribute("name",fields.defaultName,'',charId);
 		// Init (TODO mythic Init)
-		line = this.getLineByName(initAttr,data);
-		rc = this.getValueByName(initAttr,line,termChars);
-		this.addAttribute(initAttr,rc,rc,charId);	  
+		line = getLineByName(initAttr,data);
+		rc = getValueByName(initAttr,line,termChars);
+		addAttribute(initAttr,rc,rc,charId);	  
 		// prime attributes
-		lineStartFnd = this.getLineNumberByName("STATISTICS",data);
-		lineEndFnd = this.getLineNumberByName("SPECIAL ABILITIES",data);
-		line = this.getLineByName("Str",data,lineStartFnd,lineEndFnd);
-		this.addAttrList(line,primeAttr,lineStartFnd,termChars,charId);
+		lineStartFnd = getLineNumberByName("STATISTICS",data);
+		lineEndFnd = getLineNumberByName("SPECIAL ABILITIES",data);
+		line = getLineByName("Str",data,lineStartFnd,lineEndFnd);
+		addAttrList(data,line,primeAttr,lineStartFnd,termChars,charId);
 		// minor attributes
-		line = this.getLineByName("Base Atk",data,lineStartFnd,lineEndFnd);
-		this.addAttrList(line,minorAttr,lineStartFnd,termChars,charId);
+		line = getLineByName("Base Atk",data,lineStartFnd,lineEndFnd);
+		addAttrList(data,line,minorAttr,lineStartFnd,termChars,charId);
 		// defense attributes
-		lineStartFnd = this.getLineNumberByName("DEFENSE",data);
-		lineEndFnd = this.getLineNumberByName("OFFENSE",data);
-		line = this.getLineByName("AC",data,lineStartFnd,lineEndFnd);
-		this.addAttrList(line,defAttr,lineStartFnd,termChars,charId);
+		lineStartFnd = getLineNumberByName("DEFENSE",data);
+		lineEndFnd = getLineNumberByName("OFFENSE",data);
+		line = getLineByName("AC",data,lineStartFnd,lineEndFnd);
+		addAttrList(data,line,defAttr,lineStartFnd,termChars,charId);
 		// save attributes
-		line = this.getLineByName("Fort",data,lineStartFnd,lineEndFnd);
-		this.addAttrList(line,saveAttr,lineStartFnd,termChars,charId);
+		line = getLineByName("Fort",data,lineStartFnd,lineEndFnd);
+		addAttrList(data,line,saveAttr,lineStartFnd,termChars,charId);
 		
 		//format attributes:
-		var hp = this.formatAttribute("hp",0,charId);
-		this.creLog("parsecore: HP: " + hp,1);
-		var AC = this.formatAttribute("AC",0,charId);
-		this.creLog("parsecore: AC: " + AC,1);
-		var tAC = this.formatAttribute("touch",0,charId);
-		this.creLog("parsecore: touch AC: " + tAC,1);
-		var ffAC = this.formatAttribute("flat-footed",0,charId);
-		this.creLog("parsecore: flat-foot AC: " + ffAC,1);
+		hp = formatAttribute("hp",0,charId);
+		creLog("parsecore: HP: " + hp,1);
+		AC = formatAttribute("AC",0,charId);
+		creLog("parsecore: AC: " + AC,1);
+		tAC = formatAttribute("touch",0,charId);
+		creLog("parsecore: touch AC: " + tAC,1);
+		ffAC = formatAttribute("flat-footed",0,charId);
+		creLog("parsecore: flat-foot AC: " + ffAC,1);
 
 		// determine size
-		var size = this.parseSize(data);
-		this.creLog("parsecore: size: " + size,1);
-		this.addAttribute('Size',size,size,charId); 
+		var size = parseSize(data);
+		creLog("parsecore: size: " + size,1);
+		addAttribute('Size',size,size,charId); 
 		
 		// save riders
-		if ((rc=line.indexOf(';')) != -1) {
+		if ((rc=line.indexOf(';')) !== -1) {
 			rc = '('+line.substring(rc+1)+')';
 		} else {rc = "";}
-		this.addAttributeRoll("INIT",initAttr,false,true,charId,"&{tracker}");
-		this.addAttributeRoll("F","Fort",false,true,charId,rc);
-		this.addAttributeRoll("R","Ref",false,true,charId,rc);
-		this.addAttributeRoll("W","Will",false,true,charId,rc);
+		addAttributeRoll("INIT",initAttr,false,true,charId,"&{tracker}");
+		addAttributeRoll("F","Fort",false,true,charId,rc);
+		addAttributeRoll("R","Ref",false,true,charId,rc);
+		addAttributeRoll("W","Will",false,true,charId,rc);
 		
 		
-	},
+	}; 
 
 	/**
 	 * Parse Size of the creature
 	 * TODO modify getLineByName and getLineNumberByName to allow regex
 	 */
-	parseSize: function(data) {
+	var parseSize = function(data) {
 		var retval = 'Medium'; 
-		var lineEndFnd = this.getLineNumberByName('DEFENSE',data);
-		var space = this.getLineByName('Space',data,this.getLineNumberByName('OFFENSE',data),this.getLineNumberByName('STATISTICS',data)); 
-		this.creLog('parseSize: space is ' + space); 
+		var lineEndFnd = getLineNumberByName('DEFENSE',data);
+		var space = getLineByName('Space',data,getLineNumberByName('OFFENSE',data),getLineNumberByName('STATISTICS',data)); 
+		creLog('parseSize: space is ' + space); 
 		if (space) {
-			space = this.getValueByName('Space',space,[';',',']); 
-			space = this.getBonusNumber(space,this.bonusEnum.SCALAR); 
+			space = getValueByName('Space',space,[';',',']); 
+			space = getBonusNumber(space,bonusEnum.SCALAR); 
 			space = parseInt(space);
 			if (isNaN(space))
-				{return}
+				{return;}
 			space = space/5;
 			switch(space) {
 				case 1:
@@ -675,45 +674,45 @@ var CreatureGenPF = {
 					retval = 'Medium'; 
 					break; 
 			}
-		} else if (this.getLineByName('Fine',data,0,lineEndFnd) || this.getLineByName('fine',data,0,lineEndFnd)) {
+		} else if (getLineByName('Fine',data,0,lineEndFnd) || getLineByName('fine',data,0,lineEndFnd)) {
 			retval = 'Fine'; 
-		} else if (this.getLineByName('Diminutive',data,0,lineEndFnd) || this.getLineByName('diminutive',data,0,lineEndFnd)) {
+		} else if (getLineByName('Diminutive',data,0,lineEndFnd) || getLineByName('diminutive',data,0,lineEndFnd)) {
 			retval = 'Diminutive'; 
-		} else if (this.getLineByName('Tiny',data,0,lineEndFnd) || this.getLineByName('tiny',data,0,lineEndFnd)) {
+		} else if (getLineByName('Tiny',data,0,lineEndFnd) || getLineByName('tiny',data,0,lineEndFnd)) {
 			retval = 'Tiny'; 
-		} else if (this.getLineByName('Small',data,0,lineEndFnd) || this.getLineByName('small',data,0,lineEndFnd)) {
+		} else if (getLineByName('Small',data,0,lineEndFnd) || getLineByName('small',data,0,lineEndFnd)) {
 			retval = 'Small'; 
-		} else if (this.getLineByName('Medium',data,0,lineEndFnd) || this.getLineByName('Medium',data,0,lineEndFnd)) {
+		} else if (getLineByName('Medium',data,0,lineEndFnd) || getLineByName('Medium',data,0,lineEndFnd)) {
 			retval = 'Medium'; 
-		} else if (this.getLineByName('Large',data,0,lineEndFnd) || this.getLineByName('Large',data,0,lineEndFnd)) {
+		} else if (getLineByName('Large',data,0,lineEndFnd) || getLineByName('Large',data,0,lineEndFnd)) {
 			retval = 'Large'; 
-		} else if (this.getLineByName('Huge',data,0,lineEndFnd) || this.getLineByName('huge',data,0,lineEndFnd)) {
+		} else if (getLineByName('Huge',data,0,lineEndFnd) || getLineByName('huge',data,0,lineEndFnd)) {
 			retval = 'Huge'; 
-		} else if (this.getLineByName('Gargantuan',data,0,lineEndFnd) || this.getLineByName('gargantuan',data,0,lineEndFnd)) {
+		} else if (getLineByName('Gargantuan',data,0,lineEndFnd) || getLineByName('gargantuan',data,0,lineEndFnd)) {
 			retval = 'Gargantuan'; 
-		} else if (this.getLineByName('Colossal',data,0,lineEndFnd) || this.getLineByName('colossal',data,0,lineEndFnd)) {
+		} else if (getLineByName('Colossal',data,0,lineEndFnd) || getLineByName('colossal',data,0,lineEndFnd)) {
 			retval = 'Colossal'; 
 		}
 		return retval; 
-	}, 
+	}; 
 	
 	/**
 	 * parse special attacks, if the statblock has 'riders' which give
 	 * details on the special abilities, then include it as part of the marco.
 	 * TODO: add option for verbrocity during generaton.
 	 */
-	parseSpecials: function() {
+	var parseSpecials = function(data) {
 		var retval = {};
-		var charId = this.character.get('_id');
+		var charId = character.get('_id');
 		var line = "";
 		var lineStartFnd = 0;
-		var lineEndFnd = this.data.length;
-		var re = null, saName=null, abName=null, sAtks = null, sAtkStr = null;
-			action = null, actionStr = null, spList = null, hasSAtks = null;
+		var lineEndFnd = data.length;
+		var re, saName, abName, sAtks, sAtkStr,
+			action, actionStr, spList, hasSAtks;
 		
-		line = this.getLineByName("Special Attacks",this.data);
-		if (line != null) {
-			line = line.replace("Special Attacks","")
+		line = getLineByName("Special Attacks",data);
+		if (line) {
+			line = line.replace("Special Attacks",""); 
 			sAtks = line.split(/,(?![^\(\)]*\))/);
 			while (sAtks.length > 0) {
 				if (!sAtks[0] || !sAtks[0].match(/[^\s]+/)) {
@@ -721,14 +720,14 @@ var CreatureGenPF = {
 					continue;
 				}
 				saName = sAtks[0].match(/\b[^\d\(\)\+]+/g);
-				if (saName != null) {
+				if (saName) {
 					saName = saName[0].trim();
 					sAtkStr += saName;
 					if (!retval[saName]) 
-						retval[saName] = new Array(sAtks[0].trim());
+						{retval[saName] = new Array(sAtks[0].trim());}
 					else 
-						retval[saName].push(sAtks[0].trim());
-					this.creLog("parseSpecials " + sAtks[0] + " saName: " + saName,1);
+						{retval[saName].push(sAtks[0].trim());}
+					creLog("parseSpecials " + sAtks[0] + " saName: " + saName,1);
 				}
 				sAtks.shift();
 			}
@@ -736,126 +735,130 @@ var CreatureGenPF = {
 		
 		/* TODO add in nextLine support for cases where the special ability
 		name is found on the following line(s) */
-		lineStartFnd = this.getLineNumberByName("SPECIAL ABILITIES",this.data);
-		if (lineStartFnd != null)
-			for (var i = lineStartFnd; i < this.data.length; ++i) {
-				line = this.data[i];
+		lineStartFnd = getLineNumberByName("SPECIAL ABILITIES",data);
+		if (lineStartFnd) {
+			for (var i = lineStartFnd; i < data.length; ++i) {
+				line = data[i];
 				if (line.match(/\(Su\)|\(Ex\)|\(Sp\)/i)) {
 					saName = line.substring(0,line.indexOf('(')).toLowerCase().trim();
 					re = new RegExp(saName,'ig');
-					action = "!\n" + this.fields.menuWhis + 
-						line.replace(re,this.getTermLink(saName,this.termEnum.GENERAL));
+					action = "!\n" + fields.menuWhis + 
+						line.replace(re,getTermLink(saName,termEnum.GENERAL));
 					if (!retval[saName]) 
-						retval[saName] = new Array(line.trim());
+						{retval[saName] = new Array(line.trim());}
 					else 
-						retval[saName].push(line.trim());
-					this.addAbility("SA-"+saName,"",action,false,charId);
+						{retval[saName].push(line.trim());}
+					addAbility("SA-"+saName,"",action,false,charId);
 				}
 			}
+		}
 		 
 		/* If there is a special attack, that is a special attack not ability, 
 		then it is unique and should get its own ability as well as long-rider
 		if one exists.*/
-		spList = "!\n" + this.fields.menuWhis
-			+ this.menuTemplate.boundryImg({imgLink: this.design.specialTopImg})
-			+ this.menuTemplate.midDiv({imgLink: this.design.specialMidImg})
+		spList = "!\n" + fields.menuWhis
+			+ menuTemplate.boundryImg({imgLink: design.specialTopImg})
+			+ menuTemplate.midDiv({imgLink: design.specialMidImg})
 				+ '<div style="text-align:center">'
-					+ this.menuTemplate.titleFmt({
-						style: this.design.specialTitleFmt, 
-						title: this.creName
+					+ menuTemplate.titleFmt({
+						style: design.specialTitleFmt, 
+						title: creName
 					})
-					+ this.menuTemplate.titleFmt({
-						style: this.design.specialLabelFmt,
+					+ menuTemplate.titleFmt({
+						style: design.specialLabelFmt,
 						title: 'Special Attacks'
 					})
 				+'</div>';
 		/*
 		// DEPRECATED (exclude special attacks that are melee/ranged riders)
 		// insure we have melee or ranged
-		line = this.getLineByName("Melee",this.data)
-			+ this.getLineByName("Ranged",this.data) + '';
+		line = getLineByName("Melee",data)
+			+ getLineByName("Ranged",data) + '';
 		*/
-		if (sAtkStr)
-		for (sAtks in retval) {
-			if (/*!line.match(sAtks) &&*/ (sAtkStr.indexOf(sAtks) != -1)) {
-				hasSAtks = true;
-				abName = "SP-" + sAtks;
-				abName = abName.replace(/\s/g,"-");
-				action = "!\n" + this.fields.resultWhis;
-				for (var rider in retval[sAtks]) {
-					this.creLog("SP rider: " + retval[sAtks][rider],3);
-					re = new RegExp(sAtks,"ig");
-					actionStr = "<div>"+this.getFormattedRoll(retval[sAtks][rider])+"</div>";
-					action += actionStr.replace(re,this.getTermLink(sAtks,this.termEnum.GENERAL));
+		if (sAtkStr) {
+			_.every(_.keys(retval), function(sAtks) {
+				if (/*!line.match(sAtks) &&*/ (sAtkStr.indexOf(sAtks) !== -1)) {
+					hasSAtks = true;
+					abName = "SP-" + sAtks;
+					abName = abName.replace(/\s/g,"-");
+					action = "!\n" + fields.resultWhis;
+					_.every(retval[sAtks], function(rider) {
+						creLog("SP rider: " + rider,3);
+						re = new RegExp(sAtks,"ig");
+						actionStr = "<div>"+getFormattedRoll(rider)+"</div>";
+						action += actionStr.replace(re,getTermLink(sAtks,termEnum.GENERAL));
+						return true; 
+					}); 
+					creLog("SP action: " + action,3);
+					addAbility(abName,"",action,false,charId);
+					spList = spList
+						+ menuTemplate.midButton({
+							riders: undefined,
+							creName: creName,
+							abName: abName,
+							btnName: sAtks
+						});
 				}
-				this.creLog("SP action: " + action,3);
-				this.addAbility(abName,"",action,false,charId);
-				spList = spList
-					+ this.menuTemplate.midButton({
-						riders: null,
-						creName: this.creName,
-						abName: abName,
-						btnName: sAtks
-					});
-			}
+				return true; 
+			});
 		}
 		if (hasSAtks) {
 			spList = spList
 				+ '</div>'
-				+ this.menuTemplate.boundryImg({imgLink: this.design.specialBotImg});
-			this.addAbility("Specials",'',spList,false,charId);
+				+ menuTemplate.boundryImg({imgLink: design.specialBotImg});
+			addAbility("Specials",'',spList,false,charId);
 		}
 		return retval;
-	},
+	}; 
 	
 	/**
 	 * parse melee and ranged attacks, if there are special attack riders,
 	 * then we will append the marco text 
 	 */
-	parseAttacks: function(specials) {
-		var charId = this.character.get('_id');
+	var parseAttacks = function(data,specials) {
+		var charId = character.get('_id');
 		var line = "";
 		var lineStartFnd = 0;
-		var lineEndFnd = this.data.length;
-		var atkMenu = null, hasSAtk = false, CMB = null, riders = null;
+		var lineEndFnd = data.length;
+		var atkMenu, hasSAtk = false, CMB, riders;
 		
-		atkMenu = this.fields.menuWhis
-			+ this.menuTemplate.boundryImg({imgLink: this.design.atkMenuTopImg})
-			+ this.menuTemplate.midDiv({imgLink: this.design.atkMenuMidImg})
+		atkMenu = fields.menuWhis
+			+ menuTemplate.boundryImg({imgLink: design.atkMenuTopImg})
+			+ menuTemplate.midDiv({imgLink: design.atkMenuMidImg})
 				+ '<div style="text-align:center">'
-					+ this.menuTemplate.titleFmt({
-						style: this.design.atkMenuTitleFmt, 
-						title: this.creName
+					+ menuTemplate.titleFmt({
+						style: design.atkMenuTitleFmt, 
+						title: creName
 					})
-					+ this.menuTemplate.titleFmt({
-						style: this.design.atkMenuLabelFmt,
+					+ menuTemplate.titleFmt({
+						style: design.atkMenuLabelFmt,
 						title: 'Attacks'
 					})
 				+'</div>';
 		
-		lineStartFnd = this.getLineNumberByName("OFFENSE",this.data);
-		lineEndFnd = this.getLineNumberByName("TACTICS",this.data);
+		lineStartFnd = getLineNumberByName("OFFENSE",data);
+		lineEndFnd = getLineNumberByName("TACTICS",data);
 		if (!lineEndFnd)
-			lineEndFnd = this.getLineNumberByName("STATISTICS",this.data);
+			{lineEndFnd = getLineNumberByName("STATISTICS",data);}
 		try {
-			line = this.getLineByName("Melee",this.data,lineStartFnd,lineEndFnd);
+			line = getLineByName("Melee",data,lineStartFnd,lineEndFnd);
 			if (line) {
-				this.formatAttacks(line,"Melee",charId,"ATK",specials);
+				formatAttacks(line,"Melee",charId,"ATK",specials);
 				atkMenu = atkMenu
-					+ this.menuTemplate.midButton({
-						riders: null,
-						creName: this.creName,
+					+ menuTemplate.midButton({
+						riders: undefined,
+						creName: creName,
 						abName: 'ATK',
 						btnName: 'Melee'
 					});
 			}
-			line = this.getLineByName("Ranged",this.data,lineStartFnd,lineEndFnd);
+			line = getLineByName("Ranged",data,lineStartFnd,lineEndFnd);
 			if (line) {
-				this.formatAttacks(line,"Ranged",charId,"RNG",specials);
+				formatAttacks(line,"Ranged",charId,"RNG",specials);
 				atkMenu = atkMenu
-					+ this.menuTemplate.midButton({
-						riders: null,
-						creName: this.creName,
+					+ menuTemplate.midButton({
+						riders: undefined,
+						creName: creName,
 						abName: 'RNG',
 						btnName: 'Ranged'
 					});
@@ -867,24 +870,23 @@ var CreatureGenPF = {
 			});
 			if (hasSAtk.length > 0) {
 				atkMenu = atkMenu
-					+ this.menuTemplate.midButton({
-						riders: null,
-						creName: this.creName,
+					+ menuTemplate.midButton({
+						riders: undefined,
+						creName: creName,
 						abName: 'Specials',
 						btnName: 'Specials'
 					});
 			}
-			lineStartFnd = this.getLineNumberByName("STATISTICS",this.data);
-			line = this.getLineByName("CMB",this.data,lineStartFnd);
+			lineStartFnd = getLineNumberByName("STATISTICS",data);
+			line = getLineByName("CMB",data,lineStartFnd);
 			if (line) {
-				hasDefense = true;
-				CMB = this.getValueByName("CMB",line,[',',';']);
+				CMB = getValueByName("CMB",line,[',',';']);
 				riders = CMB.match(/\(.+\)/);
-				this.addAttributeRoll("CMB","CMB",false,false,charId,(riders ? riders:''));
+				addAttributeRoll("CMB","CMB",false,false,charId,(riders ? riders:''));
 				atkMenu = atkMenu
-					+ this.menuTemplate.midButton({
+					+ menuTemplate.midButton({
 						riders: riders,
-						creName: this.creName,
+						creName: creName,
 						abName: 'CMB',
 						btnName: 'CMB'
 					});
@@ -896,233 +898,240 @@ var CreatureGenPF = {
 		}
 		atkMenu = atkMenu
 			+ '</div>'
-			+ this.menuTemplate.boundryImg({imgLink: this.design.atkMenuBotImg});
-		this.addAbility("Attacks",'',atkMenu,true,charId);
-	},
+			+ menuTemplate.boundryImg({imgLink: design.atkMenuBotImg});
+		addAbility("Attacks",'',atkMenu,true,charId);
+	}; 
 	
 	/** parse out spells the marco will spit them out, possibly even link 
 	 * them to a known PRD search engine.
 	 */
-	parseSpells: function() {
-		var charId = this.character.get('_id');
-		var lineEndFnd = this.data.length;
-		var casterType = null, attrName = null;
-		var rc = null, line = "";
+	var parseSpells = function(data) {
+		var charId = character.get('_id');
+		var lineEndFnd = data.length;
+		var casterType, attrName;
+		var rc, line = "";
 		var termChars = [';',','];
 		
-		lineEndFnd = this.getLineNumberByName("TACTICS",this.data);
+		lineEndFnd = getLineNumberByName("TACTICS",data);
 		if (!lineEndFnd)
-			lineEndFnd = this.getLineNumberByName("STATISTICS",this.data);
-		this.formatSpells("Spell-Like Abilities",lineEndFnd,this.termEnum.GENERAL,"SLA");
-		this.formatSpells("Spells Known",lineEndFnd,this.termEnum.SPELL);
-		this.formatSpells("Spells Prepared",lineEndFnd,this.termEnum.SPELL);
-		this.formatSpells("Extracts Prepared",lineEndFnd,this.termEnum.SPELL);
-	},
+			{lineEndFnd = getLineNumberByName("STATISTICS",data);}
+		formatSpells("Spell-Like Abilities",data,lineEndFnd,termEnum.GENERAL,"SLA");
+		formatSpells("Spells Known",data,lineEndFnd,termEnum.SPELL);
+		formatSpells("Spells Prepared",data,lineEndFnd,termEnum.SPELL);
+		formatSpells("Extracts Prepared",data,lineEndFnd,termEnum.SPELL);
+	}; 
 	
 	/**
 	 * Generic Parse assuming CSV on the line.
 	 * 
 	 */
-	parseGeneric: function(generic,type,start,end) {
-		if (!generic || !type) return null;
-		if (!start) start = 0;
-		if (!end) end = this.data.length;
-		var charId = this.character.get('_id');
-		var genName = null, genRiders = null, genAry = null, 
-			idx = null, genList = null, abName = null, genLabel = null;
+	var parseGeneric = function(generic,data,type,start,end) {
+		if (!generic || !type) 
+			{return undefined;}
+		if (!start) 
+			{start = 0;}
+		if (!end) 
+			{end = data.length;}
+		var charId = character.get('_id');
+		var genName, genRiders, genAry, 
+			idx, genList, abName, genLabel;
 		var lineStartFnd = 0;
-		var rc = null, line = "";
+		var rc, line = "";
 		var termChars = [';'];
 		
-		genList = "!\n" + this.fields.menuWhis
-			+ this.menuTemplate.boundryImg({imgLink: this.design.genTopImg})
-			+ this.menuTemplate.midDiv({imgLink: this.design.genMidImg})
+		genList = "!\n" + fields.menuWhis
+			+ menuTemplate.boundryImg({imgLink: design.genTopImg})
+			+ menuTemplate.midDiv({imgLink: design.genMidImg})
 				+ '<div style="text-align:center">'
-					+ this.menuTemplate.titleFmt({
-						style: this.design.genTitleFmt, 
-						title: this.creName
+					+ menuTemplate.titleFmt({
+						style: design.genTitleFmt, 
+						title: creName
 					})
-					+ this.menuTemplate.titleFmt({
-						style: this.design.genLabelFmt,
+					+ menuTemplate.titleFmt({
+						style: design.genLabelFmt,
 						title: generic
 					})
 				+'</div>';
 			
-		line = this.getLineByName(generic,this.data,start,end);
-		line = this.getValueByName(generic,line,termChars);
-		this.creLog("parseGeneric: " + line,1);
+		line = getLineByName(generic,data,start,end);
+		line = getValueByName(generic,line,termChars);
+		creLog("parseGeneric: " + line,1);
 		if (line) {
 			line = line.replace(generic,"");
 			genAry = line.split(/,(?![^\(\)]*\))/);
 			if (genAry) {
-				for (var elemGen in genAry) {
-					this.creLog(genAry[elemGen],4);
-					if ((idx=genAry[elemGen].indexOf("(")) != -1) {
-						genName = genAry[elemGen].substring(0,idx).trim();
-						genRiders = genAry[elemGen].substring(idx).trim();
+				_.every(genAry, function(elemGen) {
+					if ((idx=elemGen.indexOf("(")) !== -1) {
+						genName = elemGen.substring(0,idx).trim();
+						genRiders = elemGen.substring(idx).trim();
 					} else {
-						genName = genAry[elemGen].trim();
-						genRiders = null;
+						genName = elemGen.trim();
+						genRiders = undefined;
 					}
-					genName = this.formatSuperSubScript(genName);
+					genName = formatSuperSubScript(genName);
 					genList = genList
-						+ this.menuTemplate.midLink({
+						+ menuTemplate.midLink({
 								riders: genRiders, 
-								link: this.getTermLink(genName,type)
+								link: getTermLink(genName,type)
 						});
-				}
+					return true; 
+				}); 
 				genList = genList
 					+ '</div>'
-					+ this.menuTemplate.boundryImg({imgLink: this.design.genBotImg});
-				this.addAbility(generic,'',genList,false,charId);
+					+ menuTemplate.boundryImg({imgLink: design.genBotImg});
+				addAbility(generic,'',genList,false,charId);
 			}
 		}
-	},
+	}; 
 	
 	/** parse out skills the marco will spit them out, possibly even link 
 	 * them to a known PRD search engine.
 	 */
-	parseSkills: function() {
-		var charId = this.character.get('_id');
+	var parseSkills = function(data) {
+		var charId = character.get('_id');
 		var lineStartFnd = 0;
-		var lineEndFnd = this.data.length;
-		var skillName = null, skillRiders = null, skillAry = null, 
-			skillList = null, abName = null, skillLabel = null,
-			parts = null, abStr = null, racialBonus = null, racialAry = null,
-			racialRiders = null;
-		var rc = null, line = "";
+		var lineEndFnd = data.length;
+		var skillName, skillRiders, skillAry, 
+			skillList, abName, skillLabel,
+			parts, abStr, racialBonus, racialAry,
+			racialRiders;
+		var rc, line = "";
 		var termChars = [';',','];
 		
-		skillList = "!\n" + this.fields.menuWhis
-			+ this.menuTemplate.boundryImg({imgLink: this.design.skillTopImg})
-			+ this.menuTemplate.midDiv({imgLink: this.design.skillMidImg})
+		skillList = "!\n" + fields.menuWhis
+			+ menuTemplate.boundryImg({imgLink: design.skillTopImg})
+			+ menuTemplate.midDiv({imgLink: design.skillMidImg})
 				+ '<div style="text-align:center">'
-					+ this.menuTemplate.titleFmt({
-						style: this.design.skillTitleFmt, 
-						title: this.creName
+					+ menuTemplate.titleFmt({
+						style: design.skillTitleFmt, 
+						title: creName
 					})
-					+ this.menuTemplate.titleFmt({
-						style: this.design.skillLabelFmt,
+					+ menuTemplate.titleFmt({
+						style: design.skillLabelFmt,
 						title: 'Skills'
 					})
 				+'</div>';
 		
-		lineStartFnd = this.getLineNumberByName("STATISTICS",this.data); 
-		line = this.getLineByName("Skills",this.data,lineStartFnd);
+		lineStartFnd = getLineNumberByName("STATISTICS",data); 
+		line = getLineByName("Skills",data,lineStartFnd);
 		if (line) {
 			line = line.replace("Skills","");
 			skillAry = line.split(/,(?![^\(\)]*\))|;(?![^\(\)]*\))/);
 			if (skillAry.length > 0) {
-				for (var skill in skillAry) {
-					if (!skillAry[skill] || !skillAry[skill].match(/[^\s]+/)) {
-						this.creLog("invalid: " + skill,2);
-						continue;
+				_.every(skillAry, function(skill) {
+					if (!skill || !skill.match(/[^\s]+/)) {
+						creLog("invalid: " + skill,2);
+						return true; 
 					}
-					this.creLog(skillAry[skill],4);
-					if ((parts=skillAry[skill].match(/\b[^\d\+\-/]+/)) != -1) {
+					creLog(skill,4);
+					if ((parts=skill.match(/\b[^\d\+\-/]+/)) !== -1) {
 						skillName = parts[0].trim();
-						skillRiders = (skillAry[skill].substring(skillAry[skill].indexOf(skillName)+skillName.length)).match(/\(.+\)/);
+						creLog('parseSkills: skillName: ' + skillName,5); 
+						skillRiders = (skill.substring(skill.indexOf(skillName)+skillName.length)).match(/\(.+\)/);
 					}
 					if (skillName.match("Racial Modifiers")) {
-						this.creLog("Ending skills, reason : " + skillAry[skill],4);
-						break;
+						creLog("parseSkills: Ending skills, reason : " + skillName,4);
+						return false; 
 					}
-					rc = this.getBonusNumber(skillAry[skill]);
-					skillName = this.formatSuperSubScript(skillName);
+					rc = getBonusNumber(skill);
+					skillName = formatSuperSubScript(skillName);
 					abName = "SK-" + skillName;
 					abName = abName.replace(/\s/g,"-");
-					abStr = "!\n" + this.fields.resultWhis + this.creName + ' ' + abName + " [[1d20"+rc+"]]";
-					this.addAbility(abName,'',abStr,false,charId);
+					abStr = "!\n" + fields.resultWhis + creName + ' ' + abName + " [[1d20"+rc+"]]";
+					addAbility(abName,'',abStr,false,charId);
 					skillList = skillList
-						+ this.menuTemplate.midButton({
+						+ menuTemplate.midButton({
 							riders: skillRiders,
-							creName: this.creName,
+							creName: creName,
 							abName: abName,
 							btnName: skillName
 						});
-				}
+					return true; 
+				}); 
 			}
-			if (!this.characterObjExists('SK-Perception','ability',charId)) {
-				lineEndFnd = this.getLineNumberByName('DEFENSE',this.data);
-				line = this.getLineByName('Perception',this.data,0,lineEndFnd);
-				rc = this.getValueByName('Perception',line,termChars);
-				rc = this.getBonusNumber(rc,this.bonusEnum.SIGN);
+			if (!characterObjExists('SK-Perception','ability',charId)) {
+				lineEndFnd = getLineNumberByName('DEFENSE',data);
+				line = getLineByName('Perception',data,0,lineEndFnd);
+				rc = getValueByName('Perception',line,termChars);
+				rc = getBonusNumber(rc,bonusEnum.SIGN);
 				abName = "SK-Perception";
-				abStr = "!\n" + this.fields.resultWhis + this.creName + ' ' + abName + " [[1d20"+rc+"]]";
-				this.addAbility(abName,'',abStr,false,charId);
+				abStr = "!\n" + fields.resultWhis + creName + ' ' + abName + " [[1d20"+rc+"]]";
+				addAbility(abName,'',abStr,false,charId);
 				skillList = skillList
-					+ this.menuTemplate.midButton({
+					+ menuTemplate.midButton({
 						riders: skillRiders,
-						creName: this.creName,
+						creName: creName,
 						abName: abName,
 						btnName: 'Perception'
 					});
 			}
 			skillList = skillList 
 				+ '</div>'
-				+ this.menuTemplate.boundryImg({imgLink: this.design.skillBotImg});
-			this.addAbility("Skills",'',skillList,false,charId);
+				+ menuTemplate.boundryImg({imgLink: design.skillBotImg});
+			addAbility("Skills",'',skillList,false,charId);
 		}
 		
-	},
+	}; 
 	
 	/**
 	 * Given an ability name, augment it (very specifc)
 	 * DEPRECATED
 	 */
-	augmentSkillRoll: function(name, augment, charId) {
-		var ability = null,abStr = null,rollExpr = null,
-			newExpr = null,bonus = null;
-		ability = this.characterObjExists(name,'ability',charId);
+	var augmentSkillRoll = function(name, augment, charId) {
+		var ability,abStr,rollExpr,
+			newExpr,bonus;
+		ability = characterObjExists(name,'ability',charId);
 		if (ability) {
 			abStr = ability.get('action');
-			rollExpr = this.getExpandedExpr('1d20',abStr);
+			rollExpr = getExpandedExpr('1d20',abStr);
 			newExpr = rollExpr.replace('1d20','').trim();
 			bonus = parseInt(newExpr);
 			bonus = bonus + parseInt(augment) + "";
-			bonus = this.getBonusNumber(bonus,this.bonusEnum.SIGN);
+			bonus = getBonusNumber(bonus,bonusEnum.SIGN);
 			abStr = abStr.replace(rollExpr,'1d20'+bonus);
 			ability.set('action',abStr);
 		}
-	},
+	}; 
 	
 	/**
 	 * Parse defenses
 	 */
-	parseDefenses: function() {
-		var retVal = null;
-		var charId = this.character.get('_id');
+	var parseDefenses = function(data) {
+		var retVal;
+		var charId = character.get('_id');
 		var line = "";
 		var lineStartFnd = 0;
-		var lineEndFnd = this.data.length;
+		var lineEndFnd = data.length;
 		var termChars = [';'];
 		var excluded = ['SR','DR','Immune','Resist','Weaknesses'];//TODO compensate for missing delimiters (SR on black dragons vs succubus)
 		var rc = -1;
-		var SR = null,DR = null,CMD = null,defenseAb = null,riders = null, name = null,
-			resist = null,immune = null,weak = null, senses = null, speed = null, 
-			regen = null, aura = null, fasthealing = null, aryList = null, hasDefense=false;
-		var defenseList = null;
-		
+		var i = 0; 
+		var SR,DR,CMD,defenseAb,riders, name,
+			resist,immune,weak, senses, speed, 
+			regen, aura, fasthealing, aryList, hasDefense=false;
+		var defenseList;
+
 		var fmtLinkFunc = function(arg) {
 			arg = arg.trim();
 			var name = arg.match(/\b[^\(\)]+/);
-			name = CreatureGenPF.formatSuperSubScript(name[0]);
+			name = formatSuperSubScript(name[0]);
 			var riders = arg.match(/\(.+\)/);
-			return CreatureGenPF.menuTemplate.midLinkFree({
+			return menuTemplate.midLinkFree({
 						riders: riders,
-						link: CreatureGenPF.getTermLink(name,CreatureGenPF.termEnum.GENERAL)
+						link: getTermLink(name,termEnum.GENERAL)
 					});
 		};
 		var fmtLeadFunc = function(arg) {
 			var list = arg.split('%%');
-			if (list.length != 2)
-				throw "ERROR: Bad Arg";
+			if (list.length !== 2)
+				{throw "ERROR: Bad Arg";}
 			var label = list[0];
 			var riders = list[1].match(/\(.+\)/);
 			var value = list[1].match(/\b[^\(\)]+/);
-			if (!value) value = '—';
+			if (!value) 
+				{value = '—';}
 			value = value[0].trim();
-			return CreatureGenPF.menuTemplate.midLeadText({
+			return menuTemplate.midLeadText({
 						riders: riders,
 						label: label,
 						text: value
@@ -1131,65 +1140,67 @@ var CreatureGenPF = {
 		var fmtTextFunc = function(arg) {
 			var riders = arg.match(/\(.+\)/);
 			var value = arg.match(/\b[^\(\)]+/);
-			if (!value) value = '—';
+			if (!value) 
+				{value = '—';}
 			value = value[0].trim();
-			return CreatureGenPF.menuTemplate.midText({
+			return menuTemplate.midText({
 						riders: riders,
 						text: value
 					});
 		};
 		
-		defenseList = "!\n" + this.fields.menuWhis
-			+ this.menuTemplate.boundryImg({imgLink: this.design.genTopImg})
-			+ this.menuTemplate.midDiv({imgLink: this.design.genMidImg})
+		defenseList = "!\n" + fields.menuWhis
+			+ menuTemplate.boundryImg({imgLink: design.genTopImg})
+			+ menuTemplate.midDiv({imgLink: design.genMidImg})
 				+ '<div style="text-align:center;">'
-					+ this.menuTemplate.titleFmt({
-						style: this.design.genTitleFmt, 
-						title: this.creName
+					+ menuTemplate.titleFmt({
+						style: design.genTitleFmt, 
+						title: creName
 					})
-					+ this.menuTemplate.titleFmt({
-						style: this.design.genLabelFmt,
+					+ menuTemplate.titleFmt({
+						style: design.genLabelFmt,
 						title: 'Defenses'
 					})
 				+'</div>';
 		
-		lineStartFnd = this.getLineNumberByName("DEFENSE",this.data);
-		lineEndFnd = this.getLineNumberByName("OFFENSE",this.data);
-		line = this.getLineByName("DR",this.data,lineStartFnd,lineEndFnd);
-		if (line) {DR = this.getValueByName("DR",line,termChars);}
-		line = this.getLineByName("SR",this.data,lineStartFnd,lineEndFnd);
-		if (line) {SR = this.getValueByName("SR",line,termChars);}
-		line = this.getLineByName("Immune",this.data,lineStartFnd,lineEndFnd);
-		if (line) {immune = this.getValueByName("Immune",line,termChars);}
-		line = this.getLineByName("Resist",this.data,lineStartFnd,lineEndFnd);
-		if (line) {resist = this.getValueByName("Resist",line,termChars);}
-		line = this.getLineByName("Defensive Abilities",this.data,lineStartFnd,lineEndFnd);
-		if (line) {defenseAb = this.getValueByName("Defensive Abilities",line,termChars);}
-		line = this.getLineByName("Weaknesses",this.data,lineStartFnd,lineEndFnd);
-		if (line) {weak = this.getValueByName("Weaknesses",line,termChars);}
+		lineStartFnd = getLineNumberByName("DEFENSE",data);
+		lineEndFnd = getLineNumberByName("OFFENSE",data);
+		line = getLineByName("DR",data,lineStartFnd,lineEndFnd);
+		if (line) {DR = getValueByName("DR",line,termChars);}
+		line = getLineByName("SR",data,lineStartFnd,lineEndFnd);
+		if (line) {SR = getValueByName("SR",line,termChars);}
+		line = getLineByName("Immune",data,lineStartFnd,lineEndFnd);
+		if (line) {immune = getValueByName("Immune",line,termChars);}
+		line = getLineByName("Resist",data,lineStartFnd,lineEndFnd);
+		if (line) {resist = getValueByName("Resist",line,termChars);}
+		line = getLineByName("Defensive Abilities",data,lineStartFnd,lineEndFnd);
+		if (line) {defenseAb = getValueByName("Defensive Abilities",line,termChars);}
+		line = getLineByName("Weaknesses",data,lineStartFnd,lineEndFnd);
+		if (line) {weak = getValueByName("Weaknesses",line,termChars);}
 		// add Fast Healing
-		line = this.getLineByName("fast healing",this.data,0,lineEndFnd);
-		if (line) {fasthealing = this.getValueByName("fast healing",line,termChars);}
+		line = getLineByName("fast healing",data,0,lineEndFnd);
+		if (line) {fasthealing = getValueByName("fast healing",line,termChars);}
 		// add Regeneration
-		line = this.getLineByName("regeneration",this.data,0,lineEndFnd);
-		if (line) {regen = this.getValueByName("regeneration",line,termChars);}
+		line = getLineByName("regeneration",data,0,lineEndFnd);
+		if (line) {regen = getValueByName("regeneration",line,termChars);}
 		// add CMD
-		lineStartFnd = this.getLineNumberByName("STATISTICS",this.data);
-		line = this.getLineByName("CMD",this.data,lineStartFnd);
-		if (line) {CMD = this.getValueByName("CMD",line,[',',';']);}
+		lineStartFnd = getLineNumberByName("STATISTICS",data);
+		line = getLineByName("CMD",data,lineStartFnd);
+		if (line) {CMD = getValueByName("CMD",line,[',',';']);}
 		// add Senses
-		lineEndFnd = this.getLineNumberByName("DEFENSE", this.data);
-		line = this.getLineByName("Senses",this.data,0,lineEndFnd);
-		if (line) {senses = this.getValueByName("Senses",line,termChars);}
+		lineEndFnd = getLineNumberByName("DEFENSE", data);
+		line = getLineByName("Senses",data,0,lineEndFnd);
+		if (line) {senses = getValueByName("Senses",line,termChars);}
 		// add Aura
-		line = this.getLineByName("Aura",this.data,0,lineEndFnd);
-		if (line) {aura = this.getValueByName("Aura",line,termChars);}
+		line = getLineByName("Aura",data,0,lineEndFnd);
+		if (line) {aura = getValueByName("Aura",line,termChars);}
 		// add Speed
-		lineStartFnd = this.getLineNumberByName("OFFENSE", this.data);
-		lineEndFnd = this.getLineNumberByName("TACTICS",this.data);
-		if (!lineEndFnd) lineEndFnd = this.getLineNumberByName("STATISTICS",this.data);
-		line = this.getLineByName("Speed",this.data,lineStartFnd,lineEndFnd);
-		if (line) {speed = this.getValueByName("Speed",line,termChars);}
+		lineStartFnd = getLineNumberByName("OFFENSE", data);
+		lineEndFnd = getLineNumberByName("TACTICS",data);
+		if (!lineEndFnd) 
+			{lineEndFnd = getLineNumberByName("STATISTICS",data);}
+		line = getLineByName("Speed",data,lineStartFnd,lineEndFnd);
+		if (line) {speed = getValueByName("Speed",line,termChars);}
 		
 		if (CMD) {
 			hasDefense = true;
@@ -1220,7 +1231,7 @@ var CreatureGenPF = {
 			defenseList += '<div>';
 			if (DR && SR) {
 				defenseList = defenseList 
-					+ this.formatTable(
+					+ formatTable(
 						[('DR:%%'+DR),('SR:%%'+SR)],
 						2,
 						fmtLeadFunc);
@@ -1242,9 +1253,9 @@ var CreatureGenPF = {
 					+ '<span style="font-weight: bold; color: #000000;">' + "Speed:" + '</span>'
 				+ '</div>';
 			if (aryList.length >= 2) {
-				defenseList += '<div>' + this.formatTable(aryList,2,fmtTextFunc) + '</div>';
+				defenseList += '<div>' + formatTable(aryList,2,fmtTextFunc) + '</div>';
 			} else if (aryList.length > 0) {
-				for (var i = 0; i < aryList.length; i++) {
+				for (i = 0; i < aryList.length; i++) {
 					if (!aryList[i] || !aryList[i].match(/[^\s]+/)) {
 					 continue;
 					}
@@ -1264,9 +1275,9 @@ var CreatureGenPF = {
 					+ '<span style="font-weight: bold; color: #000000;">' + "Senses:" + '</span>'
 				+ '</div>';
 			if (aryList.length > 3) {
-				defenseList += '<div>' + this.formatTable(aryList,2,fmtLinkFunc) + '</div>';
+				defenseList += '<div>' + formatTable(aryList,2,fmtLinkFunc) + '</div>';
 			} else if (aryList.length > 0) {
-				for (var i = 0; i < aryList.length; i++) {
+				for (i = 0; i < aryList.length; i++) {
 					if (!aryList[i] || !aryList[i].match(/[^\s]+/)) {
 					 continue;
 					}
@@ -1286,9 +1297,9 @@ var CreatureGenPF = {
 					+ '<span style="font-weight: bold; color: #000000;">' + "Aura:" + '</span>'
 				+ '</div>';
 			if (aryList.length > 3) {
-				defenseList += '<div>' + this.formatTable(aryList,2,fmtLinkFunc) + '</div>';
+				defenseList += '<div>' + formatTable(aryList,2,fmtLinkFunc) + '</div>';
 			} else if (aryList.length > 0) {
-				for (var i = 0; i < aryList.length; i++) {
+				for (i = 0; i < aryList.length; i++) {
 					if (!aryList[i] || !aryList[i].match(/[^\s]+/)) {
 					 continue;
 					}
@@ -1308,9 +1319,9 @@ var CreatureGenPF = {
 					+ '<span style="font-weight: bold; color: #000000;">' + "Immunities:" + '</span>'
 				+ '</div>';
 			if (aryList.length > 3) {
-				defenseList += '<div>' + this.formatTable(aryList,2,fmtLinkFunc) + '</div>';
+				defenseList += '<div>' + formatTable(aryList,2,fmtLinkFunc) + '</div>';
 			} else if (aryList.length > 0) {
-				for (var i = 0; i < aryList.length; i++) {
+				for (i = 0; i < aryList.length; i++) {
 					if (!aryList[i] || !aryList[i].match(/[^\s]+/)) {
 					 continue;
 					}
@@ -1330,9 +1341,9 @@ var CreatureGenPF = {
 					+ '<span style="font-weight: bold; color: #000000;">' + "Resistances:" + '</span>'
 				+ '</div>';
 			if (aryList.length > 3) {
-				defenseList += '<div>' + this.formatTable(aryList,2,fmtLinkFunc) + '</div>';
+				defenseList += '<div>' + formatTable(aryList,2,fmtLinkFunc) + '</div>';
 			} else if (aryList.length > 0) {
-				for (var i = 0; i < aryList.length; i++) {
+				for (i = 0; i < aryList.length; i++) {
 					if (!aryList[i] || !aryList[i].match(/[^\s]+/)) {
 					 continue;
 					}
@@ -1352,9 +1363,9 @@ var CreatureGenPF = {
 					+ '<span style="font-weight: bold; color: #000000;">' + "Weaknesses:" + '</span>'
 				+ '</div>';
 			if (aryList.length > 3) {
-				defenseList += '<div>' + this.formatTable(aryList,2,fmtLinkFunc) + '</div>';
+				defenseList += '<div>' + formatTable(aryList,2,fmtLinkFunc) + '</div>';
 			} else if (aryList.length > 0) {
-				for (var i = 0; i < aryList.length; i++) {
+				for (i = 0; i < aryList.length; i++) {
 					if (!aryList[i] || !aryList[i].match(/[^\s]+/)) {
 					 continue;
 					}
@@ -1374,9 +1385,9 @@ var CreatureGenPF = {
 					+ '<span style="font-weight: bold; color: #000000;">' + "Defensive Abilities:" + '</span>'
 				+ '</div>';
 			if (aryList.length > 3) {
-				defenseList += '<div>' + this.formatTable(aryList,2,fmtLinkFunc) + '</div>';
+				defenseList += '<div>' + formatTable(aryList,2,fmtLinkFunc) + '</div>';
 			} else if (aryList.length > 0) {
-				for (var i = 0; i < aryList.length; i++) {
+				for (i = 0; i < aryList.length; i++) {
 					if (!aryList[i] || !aryList[i].match(/[^\s]+/)) {
 					 continue;
 					}
@@ -1390,37 +1401,39 @@ var CreatureGenPF = {
 		
 		defenseList = defenseList
 			+ '</div>'
-			+ this.menuTemplate.boundryImg({imgLink: this.design.genBotImg});
+			+ menuTemplate.boundryImg({imgLink: design.genBotImg});
 
 		if (hasDefense) {
-			this.addAbility("Defenses",'',defenseList,false,charId);
+			addAbility("Defenses",'',defenseList,false,charId);
 		}
 		
-	},
+	}; 
 	
 	/**
 	 * Format a table given a minimum column length and a format function for
 	 * the elements.
 	 */
-	formatTable: function(aryList, minCol, fmtFunc) {
-		if (!aryList || !minCol) return null;
-		if (!fmtFunc) fmtFunc = function(arg) {return arg;};
+	var formatTable = function(aryList, minCol, fmtFunc) {
+		if (!aryList || !minCol) 
+			{return undefined;}
+		if (!fmtFunc) 
+			{fmtFunc = function(arg) {return arg;};}
 		var retval = '<table style="margin-left: auto; margin-right: auto;">';
+		var i,j; 
 		
-		for (var i = 0; i < aryList.length; i += minCol) {
+		for (i = 0; i < aryList.length; i += minCol) {
 			retval += '<tr>';
 			if ((aryList.length - i + 1) > minCol) {
-				for (var j = i; j < i + minCol; ++j) {
+				for (j = i; j < i + minCol; ++j) {
 					if (!aryList[j] || !aryList[j].match(/[^\s]+/))
-						continue;
+						{continue;}
 					retval += '<td>' + fmtFunc(aryList[j]) + '</td>';
 				}
 			} else {
 				// span the last column
-				var j;
 				for (j = i; j < aryList.length - 1; ++j) {
 					if (!aryList[j] || !aryList[j].match(/[^\s]+/))
-						continue;
+						{continue;}
 					retval += '<td>' + fmtFunc(aryList[j]) + '</td>';
 				}
 				retval += '<td colspan="' + (minCol-(j%minCol)) + '">' + fmtFunc(aryList[aryList.length - 1]) + '</td>';
@@ -1433,113 +1446,115 @@ var CreatureGenPF = {
 	// clean up remainder here
 	retval += '</table>';
 	return retval;
-},
+}; 
 	
 	/**
 	 * Parse out special abilities (not special attacks) and put them in a
 	 * menu, if there are no special abilities, create no such menu
 	 */
-	parseSpecialMenu: function(specials) {
-		if (!specials) return null;
-		var charId = this.character.get('_id');
-		var spMenu = null, saName = null, hasSpecials = false;
+	var parseSpecialMenu = function(data,specials) {
+		if (!specials) 
+			{return undefined;}
+		var charId = character.get('_id');
+		var spMenu, saName, hasSpecials = false;
 		
-		spMenu = "!\n" + this.fields.menuWhis
-			+ this.menuTemplate.boundryImg({imgLink: this.design.genTopImg})
-			+ this.menuTemplate.midDiv({imgLink: this.design.genMidImg})
+		spMenu = "!\n" + fields.menuWhis
+			+ menuTemplate.boundryImg({imgLink: design.genTopImg})
+			+ menuTemplate.midDiv({imgLink: design.genMidImg})
 				+ '<div style="text-align:center">'
-					+ this.menuTemplate.titleFmt({
-						style: this.design.genTitleFmt, 
-						title: this.creName
+					+ menuTemplate.titleFmt({
+						style: design.genTitleFmt, 
+						title: creName
 					})
-					+ this.menuTemplate.titleFmt({
-						style: this.design.genLabelFmt,
+					+ menuTemplate.titleFmt({
+						style: design.genLabelFmt,
 						title: 'Special Abilities'
 					})
 				+'</div>';
 		
 		
-		for ( var key in specials) {
+		_.every(_.keys(specials), function(key) {
 			saName = 'SA-' + key;
-			if (this.characterObjExists(saName,'ability',charId)) {
+			if (characterObjExists(saName,'ability',charId)) {
 				hasSpecials = true;
 				spMenu = spMenu
-					+ this.menuTemplate.midButton({
-							riders: null,
-							creName: this.creName,
+					+ menuTemplate.midButton({
+							riders: undefined,
+							creName: creName,
 							abName: saName,
 							btnName: key
 					});
 			}
-		}
+			return true; 
+		}); 
 		
 		spMenu = spMenu
 			+ '</div>'
-			+ this.menuTemplate.boundryImg({imgLink: this.design.genBotImg});
+			+ menuTemplate.boundryImg({imgLink: design.genBotImg});
 		
 		if (hasSpecials)
-			this.addAbility("Special Abilities",'',spMenu,false,charId);
-	},
+			{addAbility("Special Abilities",'',spMenu,false,charId);}
+	}; 
 	
 	/**
 	 * Parses Gear
 	 */
-	parseItems: function() {
-		var charId = this.character.get('_id');
-		var menu = null, hasGear = false;
-		var start = null, end = null;
+	var parseItems = function(data) {
+		var charId = character.get('_id');
+		var menu, hasGear = false;
+		var start, end;
 		
-		menu = '!\n' + this.fields.menuWhis
-			+ this.menuTemplate.boundryImg({imgLink: this.design.genTopImg})
-			+ this.menuTemplate.midDiv({imgLink: this.design.genMidImg})
+		menu = '!\n' + fields.menuWhis
+			+ menuTemplate.boundryImg({imgLink: design.genTopImg})
+			+ menuTemplate.midDiv({imgLink: design.genMidImg})
 				+ '<div style="text-align:center">'
-					+ this.menuTemplate.titleFmt({
-						style: this.design.genTitleFmt, 
-						title: this.creName
+					+ menuTemplate.titleFmt({
+						style: design.genTitleFmt, 
+						title: creName
 					})
-					+ this.menuTemplate.titleFmt({
-						style: this.design.genLabelFmt,
+					+ menuTemplate.titleFmt({
+						style: design.genLabelFmt,
 						title: 'Items'
 					})
 				+'</div>';
 				
-		start = this.getLineNumberByName('STATISTICS',this.data);
-		end = this.getLineNumberByName('SPECIAL ABILITIES',this.data);
+		start = getLineNumberByName('STATISTICS',data);
+		end = getLineNumberByName('SPECIAL ABILITIES',data);
 				
 		// parse Combat Gear
-		this.parseGeneric("Combat Gear",this.termEnum.GENERAL,start,end);
-		if (this.characterObjExists("Combat Gear","ability",charId)) {
+		parseGeneric("Combat Gear",termEnum.GENERAL,start,end);
+		if (characterObjExists("Combat Gear","ability",charId)) {
 			hasGear = true;
 			menu = menu
-				+ this.menuTemplate.midButton({
-					riders: null,
-					creName: this.creName,
+				+ menuTemplate.midButton({
+					riders: undefined,
+					creName: creName,
 					abName: 'Combat Gear',
 					btnName: 'Gear-Combat'
 				});
 		}
 		
 		// parse Other Gear
-		this.parseGeneric("Other Gear",this.termEnum.GENERAL,start,end);
-		if (this.characterObjExists("Other Gear","ability",charId)) {
+		parseGeneric("Other Gear",termEnum.GENERAL,start,end);
+		if (characterObjExists("Other Gear","ability",charId)) {
 			hasGear = true;
 			menu = menu
-				+ this.menuTemplate.midButton({
-					riders: null,
-					creName: this.creName,
+				+ menuTemplate.midButton({
+					riders: undefined,
+					creName: creName,
 					abName: 'Other Gear',
 					btnName: 'Gear-Other'
 				});
 		}
 		if (!hasGear) {
 			// parse General Gear
-			this.parseGeneric("Gear",this.termEnum.GENERAL,start,end);
-			if (this.characterObjExists("Gear","ability",charId)) {
+			parseGeneric("Gear",termEnum.GENERAL,start,end);
+			if (characterObjExists("Gear","ability",charId)) {
 				hasGear = true;
 				menu = menu
-					+ this.menuTemplate.midButton({
-						riders: null,
-						creName: this.creName,
+					+ menuTemplate.midButton({
+						riders: undefined,
+						creName: creName,
 						abName: 'Gear',
 						btnName: 'Gear'
 					});
@@ -1548,78 +1563,78 @@ var CreatureGenPF = {
 				
 		menu = menu
 			+ '</div>'
-			+ this.menuTemplate.boundryImg({imgLink: this.design.genBotImg});
+			+ menuTemplate.boundryImg({imgLink: design.genBotImg});
 		
 		if (hasGear)
-			this.addAbility("Items",'',menu,false,charId);
-	},
+			{addAbility("Items",'',menu,false,charId);}
+	}; 
 	
 	/**
 	 * Parses Tactics
 	 */
-	parseTactics: function() {
-		var charId = this.character.get('_id');
-		var menu = null, hasTactics = false;
-		var start = null, end = null, line = null;
+	var parseTactics = function(data) {
+		var charId = character.get('_id');
+		var menu, hasTactics = false;
+		var start, end, line;
 
-		menu = '!\n' + this.fields.menuWhis
-			+ this.menuTemplate.boundryImg({imgLink: this.design.genTopImg})
-			+ this.menuTemplate.midDiv({imgLink: this.design.genMidImg})
+		menu = '!\n' + fields.menuWhis
+			+ menuTemplate.boundryImg({imgLink: design.genTopImg})
+			+ menuTemplate.midDiv({imgLink: design.genMidImg})
 				+ '<div style="text-align:center">'
-					+ this.menuTemplate.titleFmt({
-						style: this.design.genTitleFmt, 
-						title: this.creName
+					+ menuTemplate.titleFmt({
+						style: design.genTitleFmt, 
+						title: creName
 					})
-					+ this.menuTemplate.titleFmt({
-						style: this.design.genLabelFmt,
+					+ menuTemplate.titleFmt({
+						style: design.genLabelFmt,
 						title: 'Tactics'
 					})
 				+'</div>';
 				
-		start = this.getLineNumberByName('TACTICS',this.data);
-		end = this.getLineNumberByName('STATISTICS',this.data);
+		start = getLineNumberByName('TACTICS',data);
+		end = getLineNumberByName('STATISTICS',data);
 		
 		// Before Combat
-		line = this.getLineByName('Before Combat',this.data,start,end);
+		line = getLineByName('Before Combat',data,start,end);
 		if (line) {
 			hasTactics = true;
 			line = line.replace('Before Combat','<b>Before Combat</b>');
-			line = '!\n' + this.fields.privWhis + line;
-			this.addAbility('Tactics-Before','',line,false,charId);
+			line = '!\n' + fields.privWhis + line;
+			addAbility('Tactics-Before','',line,false,charId);
 			menu = menu
-				+ this.menuTemplate.midButton({
-					riders: null,
-					creName: this.creName,
+				+ menuTemplate.midButton({
+					riders: undefined,
+					creName: creName,
 					abName: 'Tactics-Before',
 					btnName: 'Before Combat'
 				});
 		}
 		// During Combat
-		line = this.getLineByName('During Combat',this.data,start,end);
+		line = getLineByName('During Combat',data,start,end);
 		if (line) {
 			hasTactics = true;
 			line = line.replace('During Combat','<b>During Combat</b>');
-			line = '!\n' + this.fields.privWhis + line;
-			this.addAbility('Tactics-During','',line,false,charId);
+			line = '!\n' + fields.privWhis + line;
+			addAbility('Tactics-During','',line,false,charId);
 			menu = menu
-				+ this.menuTemplate.midButton({
-					riders: null,
-					creName: this.creName,
+				+ menuTemplate.midButton({
+					riders: undefined,
+					creName: creName,
 					abName: 'Tactics-During',
 					btnName: 'During Combat'
 				});
 		}
 		// Morale
-		line = this.getLineByName('Morale',this.data,start,end);
+		line = getLineByName('Morale',data,start,end);
 		if (line) {
 			hasTactics = true;
 			line = line.replace('Morale','<b>Morale</b>');
-			line = '!\n' + this.fields.privWhis + line;
-			this.addAbility('Tactics-Morale','',line,false,charId);
+			line = '!\n' + fields.privWhis + line;
+			addAbility('Tactics-Morale','',line,false,charId);
 			menu = menu
-				+ this.menuTemplate.midButton({
-					riders: null,
-					creName: this.creName,
+				+ menuTemplate.midButton({
+					riders: undefined,
+					creName: creName,
 					abName: 'Tactics-Morale',
 					btnName: 'Morale'
 				});
@@ -1627,112 +1642,112 @@ var CreatureGenPF = {
 		
 		menu = menu
 			+ '</div>'
-			+ this.menuTemplate.boundryImg({imgLink: this.design.genBotImg});
+			+ menuTemplate.boundryImg({imgLink: design.genBotImg});
 		if (hasTactics)
-			this.addAbility("Tactics",'',menu,false,charId);
-	},
+			{addAbility("Tactics",'',menu,false,charId);}
+	}; 
 	
 	/**
 	 * parse additional, non-combat abilities
 	 */
-	parseExtra: function(specials) {
-		var charId = this.character.get('_id');
-		var menu = null, hasExtras = false;
+	var parseExtra = function(data,specials) {
+		var charId = character.get('_id');
+		var menu, hasExtras = false;
 		
-		menu = this.fields.menuWhis
-			+ this.menuTemplate.boundryImg({imgLink: this.design.genTopImg})
-			+ this.menuTemplate.midDiv({imgLink: this.design.genMidImg})
+		menu = fields.menuWhis
+			+ menuTemplate.boundryImg({imgLink: design.genTopImg})
+			+ menuTemplate.midDiv({imgLink: design.genMidImg})
 				+ '<div style="text-align:center">'
-					+ this.menuTemplate.titleFmt({
-						style: this.design.genTitleFmt, 
-						title: this.creName
+					+ menuTemplate.titleFmt({
+						style: design.genTitleFmt, 
+						title: creName
 					})
-					+ this.menuTemplate.titleFmt({
-						style: this.design.genLabelFmt,
+					+ menuTemplate.titleFmt({
+						style: design.genLabelFmt,
 						title: 'Abilities'
 					})
 				+'</div>';
 		
 		// parse skills
-		this.parseSkills();
-		if (this.characterObjExists("Skills","ability",charId)) {
+		parseSkills(data);
+		if (characterObjExists("Skills","ability",charId)) {
 			hasExtras = true;
 			menu = menu
-				+ this.menuTemplate.midButton({
-					riders: null,
-					creName: this.creName,
+				+ menuTemplate.midButton({
+					riders: undefined,
+					creName: creName,
 					abName: 'Skills',
 					btnName: 'Skills'
 				});
 		}
 		// parse feats
-		this.parseGeneric("Feats",this.termEnum.FEAT);
-		if (this.characterObjExists("Feats","ability",charId)) {
+		parseGeneric("Feats",data,termEnum.FEAT);
+		if (characterObjExists("Feats","ability",charId)) {
 			hasExtras = true;
 			menu = menu
-				+ this.menuTemplate.midButton({
-					riders: null,
-					creName: this.creName,
+				+ menuTemplate.midButton({
+					riders: undefined,
+					creName: creName,
 					abName: 'Feats',
 					btnName: 'Feats'
 				});
 		}
 		// parse SQ
-		this.parseGeneric("SQ",this.termEnum.GENERAL);
-		if (this.characterObjExists("SQ","ability",charId)) {
+		parseGeneric("SQ",data,termEnum.GENERAL);
+		if (characterObjExists("SQ","ability",charId)) {
 			hasExtras = true;
 			menu = menu
-				+ this.menuTemplate.midButton({
-					riders: null,
-					creName: this.creName,
+				+ menuTemplate.midButton({
+					riders: undefined,
+					creName: creName,
 					abName: 'SQ',
 					btnName: 'SQ'
 				});
 		}
 		// parse Defenses
-		this.parseDefenses();
-		if (this.characterObjExists("Defenses","ability",charId)) {
+		parseDefenses(data);
+		if (characterObjExists("Defenses","ability",charId)) {
 			hasExtras = true;
 			menu = menu
-				+ this.menuTemplate.midButton({
-					riders: null,
-					creName: this.creName,
+				+ menuTemplate.midButton({
+					riders: undefined,
+					creName: creName,
 					abName: 'Defenses',
 					btnName: 'Defenses'
 				});
 		}
 		// parse Tactics
-		this.parseTactics();
-		if (this.characterObjExists("Tactics","ability",charId)) {
+		parseTactics(data);
+		if (characterObjExists("Tactics","ability",charId)) {
 			hasExtras = true;
 			menu = menu
-				+ this.menuTemplate.midButton({
-					riders: null,
-					creName: this.creName,
+				+ menuTemplate.midButton({
+					riders: undefined,
+					creName: creName,
 					abName: 'Tactics',
 					btnName: 'Tactics'
 				});
 		}
 		// parse special abilities
-		this.parseSpecialMenu(specials);
-		if (this.characterObjExists("Special Abilities","ability",charId)) {
+		parseSpecialMenu(data,specials);
+		if (characterObjExists("Special Abilities","ability",charId)) {
 			hasExtras = true;
 			menu = menu
-				+ this.menuTemplate.midButton({
-					riders: null,
-					creName: this.creName,
+				+ menuTemplate.midButton({
+					riders: undefined,
+					creName: creName,
 					abName: 'Special Abilities',
 					btnName: 'Special Abilities'
 				});
 		}
 		// parse items
-		this.parseItems(specials);
-		if (this.characterObjExists("Items","ability",charId)) {
+		parseItems(data);
+		if (characterObjExists("Items","ability",charId)) {
 			hasExtras = true;
 			menu = menu
-				+ this.menuTemplate.midButton({
-					riders: null,
-					creName: this.creName,
+				+ menuTemplate.midButton({
+					riders: undefined,
+					creName: creName,
 					abName: 'Items',
 					btnName: 'Items'
 				});
@@ -1741,149 +1756,152 @@ var CreatureGenPF = {
 		
 		menu = menu
 			+ '</div>'
-			+ this.menuTemplate.boundryImg({imgLink: this.design.genBotImg});
+			+ menuTemplate.boundryImg({imgLink: design.genBotImg});
 		
 		if (hasExtras)
-			this.addAbility("Abilities",'',menu,true,charId);
-	},
+			{addAbility("Abilities",'',menu,true,charId);}
+	}; 
 	
 	/** 
 	 * A messy area were we parse exceptions such as Base-statistics and 
 	 * other rare things that mess up the uniformity of PRD stat blocks.
 	 */
-	parseOutlier: function() {
+	var parseOutlier = function() {
 		// Unimplemented
-	},
+	}; 
 	
 	/**
 	 * Format spells
 	 */
-	formatSpells: function(type, end, termType, suffix) {
-		if (!type || !end || !termType) return null;
-		var charId = this.character.get('_id');
-		var start = null, casterType = null, conAttrName = null, clAttrName = null,
-			sLevel = null, spells = null, rc = null, line = null, casterLevel = null,
-			concentration = null, spellBook = null, abName = null, attrStr = null;;
+	var formatSpells = function(type, data, end, termType, suffix) {
+		if (!type || !end || !termType) 
+			{return undefined;}
+		var charId = character.get('_id');
+		var start, casterType, conAttrName, clAttrName,
+			sLevel, spells, rc, line, casterLevel,
+			concentration, spellBook, abName, attrStr;
 		var termChars = [';',','];
 		
-		start = this.getLineNumberByName(type,this.data);
-		while ((start != null) && (line=this.getLineByName(type,this.data,start,end)) != null) {
-			if (line != null) {
-				line = this.getLineByName(type,this.data,start,end);
+		start = getLineNumberByName(type,data);
+		while (start && !!(line=getLineByName(type,data,start,end))) {
+			if (line) {
+				line = getLineByName(type,data,start,end);
 				casterType = line.substring(0,line.indexOf(type)).trim();
 				casterType = casterType.replace(/\s+/g,"-");
-				if (casterType == "") casterType = "Base";
+				if (casterType === "") 
+					{casterType = "Base";}
 				casterType += (suffix ? ("-"+suffix) : "");
-				casterLevel = this.getValueByName("CL",line,termChars);
-				casterLevel = this.getBonusNumber(casterLevel,this.bonusEnum.SCALAR);
-				this.creLog("SpellFormat: casterType: " + casterType,2);
+				casterLevel = getValueByName("CL",line,termChars);
+				casterLevel = getBonusNumber(casterLevel,bonusEnum.SCALAR);
+				creLog("SpellFormat: casterType: " + casterType,2);
 				clAttrName = casterType + "-CL";
-				this.addAttribute(clAttrName,casterLevel,casterLevel,charId);
-				attrStr = "!\n" + this.fields.resultWhis + this.creName
+				addAttribute(clAttrName,casterLevel,casterLevel,charId);
+				attrStr = "!\n" + fields.resultWhis + creName
 					+ ': ' + clAttrName + ': [[1d20+'+casterLevel+']]';
-				this.addAbility(clAttrName,'',attrStr,false,charId);
-				concentration = this.getValueByName("concentration",line,termChars);
-				concentration = this.getBonusNumber(concentration,this.bonusEnum.SIGN);
+				addAbility(clAttrName,'',attrStr,false,charId);
+				concentration = getValueByName("concentration",line,termChars);
+				concentration = getBonusNumber(concentration,bonusEnum.SIGN);
 				conAttrName = casterType + "-CON";
-				this.addAttribute(conAttrName,concentration,concentration,charId);
+				addAttribute(conAttrName,concentration,concentration,charId);
 				if (!concentration) {
-					this.addWarning('No concentration bonus found for \''
+					addWarning('No concentration bonus found for \''
 						+ casterType + '\' ' + type + '. A manual'
 						+ ' prompt has been substituted in place.');
 				}
-				attrStr = "!\n" + this.fields.resultWhis + this.creName 
+				attrStr = "!\n" + fields.resultWhis + creName 
 					+ ': ' + conAttrName + ': [[1d20'+(concentration ? concentration:'+?{concentration-bonus}')+']]';
-				this.addAbility(conAttrName,'',attrStr,false,charId);
+				addAbility(conAttrName,'',attrStr,false,charId);
 				start++;
 
-				spellBook = this.fields.menuWhis
-					+ this.menuTemplate.boundryImg({imgLink: this.design.spellBookTopImg})
-					+ (this.design.spellBookMidOvr ? 
-						this.menuTemplate.midDivOverlay({imgLink: this.design.spellBookMidImg, imgLinkOverlay: this.design.spellBookMidOvr})
-						: this.menuTemplate.midDiv({imgLink: this.design.spellBookMidImg}))
+				spellBook = fields.menuWhis
+					+ menuTemplate.boundryImg({imgLink: design.spellBookTopImg})
+					+ (design.spellBookMidOvr ? 
+						menuTemplate.midDivOverlay({imgLink: design.spellBookMidImg, imgLinkOverlay: design.spellBookMidOvr})
+						: menuTemplate.midDiv({imgLink: design.spellBookMidImg}))
 						+ '<div style="text-align:center">'
-							+ this.menuTemplate.titleFmt({
-								style: this.design.spellBookTitleFmt, 
+							+ menuTemplate.titleFmt({
+								style: design.spellBookTitleFmt, 
 								title: casterType
 							})
 						+'</div>';
 
-				this.creLog("ParseSpells: start: " + start + " line: " + line,1);
+				creLog("ParseSpells: start: " + start + " line: " + line,1);
 				// mow down some lines wherever we see —, stop when we don't see it.
 				for (var i = start; i < end; ++i) {
-					line = this.data[i];
-					this.creLog("formatSpells: line " + line,2);
+					line = data[i];
+					creLog("formatSpells: line " + line,2);
 					if (line.match("—")) {
 						spells = line.split("—");
 						if (spells.length < 2)
-							throw "ERROR: Bad spell list format";
+							{throw "ERROR: Bad spell list format";}
 						sLevel = spells[0];
 						spells = spells[1].split(/,(?![^\(\)]*\))/);
-						this.creLog("spells sl: " + sLevel + " sp: " + spells,2);
-						this.addSpells(casterLevel,sLevel,spells,termType,casterType,charId);
+						creLog("spells sl: " + sLevel + " sp: " + spells,2);
+						addSpells(casterLevel,sLevel,spells,termType,casterType,charId);
 						abName = casterType + " " + sLevel;
 						spellBook = spellBook
-							+ this.menuTemplate.midButton({
-								riders: null,
-								creName: this.creName,
+							+ menuTemplate.midButton({
+								riders: undefined,
+								creName: creName,
 								abName: abName,
 								btnName: sLevel
 							});
-					} else break;
+					} else 
+						{break;}
 				}
 				if (casterType) {
 					// put in CL and CON check buttons
 					spellBook = spellBook
 						+ '<div>##</div>'
 						+ '<div style="font-weight: bold;">'
-							+ this.menuTemplate.midButtonFree({
-								riders: null,
-								creName: this.creName,
+							+ menuTemplate.midButtonFree({
+								riders: undefined,
+								creName: creName,
 								abName: clAttrName,
 								btnName: 'CL'
 							})
 							+ '\t'
-							+ this.menuTemplate.midButtonFree({
-								riders: null,
-								creName: this.creName,
+							+ menuTemplate.midButtonFree({
+								riders: undefined,
+								creName: creName,
 								abName: conAttrName,
 								btnName: 'CON'
 							})
 						+ '</div>'
-						+ (this.design.spellBookMidOvr ? '</td></tr></table>':'') // table-centering
+						+ (design.spellBookMidOvr ? '</td></tr></table>':'') // table-centering
 						+ '</div>' // BG
-						+ this.menuTemplate.boundryImg({imgLink: this.design.spellBookBotImg});
+						+ menuTemplate.boundryImg({imgLink: design.spellBookBotImg});
 					abName = casterType;
-					this.addAbility(abName,'',spellBook,true,charId);
+					addAbility(abName,'',spellBook,true,charId);
 				}
 				/* Should be safe if we're under the assumption that there is at
 				lease one ability given the stat block defined that it has abilities
 				of this type */
-				start = this.getLineNumberByName(type,this.data,start+1,end);
+				start = getLineNumberByName(type,data,start+1,end);
 			}
 		}
-	},
+	}; 
 	
 	/**
 	 * add spells, be wary of greater/lesser semantics..
 	 */
-	addSpells: function(casterLevel,spellLvl, spellAry, termType, setName, charId) {
+	var addSpells = function(casterLevel,spellLvl, spellAry, termType, setName, charId) {
 		if (!spellLvl || !spellAry || !setName || !termType || !charId) 
-			return null;
-		var spellName = null, spellRiders = null, spellLabel = null, idx = null, 
-			abName = null;
+			{return undefined;}
+		var spellName, spellRiders, spellLabel, idx, 
+			abName;
 		var spellList = "";
 		
-		spellList = "!\n" + this.fields.menuWhis
-			+ this.menuTemplate.boundryImg({imgLink: this.design.spellTopImg})
-			+ this.menuTemplate.midDiv({imgLink: this.design.spellMidImg})
+		spellList = "!\n" + fields.menuWhis
+			+ menuTemplate.boundryImg({imgLink: design.spellTopImg})
+			+ menuTemplate.midDiv({imgLink: design.spellMidImg})
 				+ '<div style="text-align:center">'
-					+ this.menuTemplate.titleFmt({
-						style: this.design.spellTitleFmt, 
+					+ menuTemplate.titleFmt({
+						style: design.spellTitleFmt, 
 						title: setName
 					})
-					+ this.menuTemplate.titleFmt({
-						style: this.design.spellLabelFmt,
+					+ menuTemplate.titleFmt({
+						style: design.spellLabelFmt,
 						title: spellLvl + " CL("+casterLevel+")"
 					})
 				+'</div>';
@@ -1894,101 +1912,107 @@ var CreatureGenPF = {
 				continue;
 			}
 			spellAry[0] = spellAry[0].trim();
-			if ((idx=spellAry[0].indexOf("(")) != -1) {
+			if ((idx=spellAry[0].indexOf("(")) !== -1) {
 				spellName = spellAry[0].substring(0,idx).trim();
 				spellRiders = spellAry[0].substring(idx).trim();
 			} else {
 				spellName = spellAry[0].trim();
-				spellRiders = null;
+				spellRiders = undefined;
 			}
 			// elminate badly formatted trailing commas
-			if (spellName == "" || !spellName)
-				throw 'ERROR: bad spell name: ' + spellName;
+			if (spellName === "" || !spellName)
+				{throw 'ERROR: bad spell name: ' + spellName;}
 			// Invert to treat special names, link to the base spell in the label
-			spellName = this.formatSuperSubScript(spellName);
-			spellLabel = this.formatSpellStrength(spellName);
-			this.creLog("spell name: " + spellName + " spellRiders: " + spellRiders,2);
+			spellName = formatSuperSubScript(spellName);
+			spellLabel = formatSpellStrength(spellName);
+			creLog("spell name: " + spellName + " spellRiders: " + spellRiders,2);
 			
 			//d20pfsrd uses - rather than %20
 			spellLabel = spellLabel.replace(/\s+/g,"-");
 			spellList = spellList
-				+ this.menuTemplate.midLinkCaption({
+				+ menuTemplate.midLinkCaption({
 						riders: spellRiders, 
-						link: this.getTermLink(spellLabel,termType,spellName)
+						link: getTermLink(spellLabel,termType,spellName)
 				});
 			spellAry.shift();
 		}
 		spellList = spellList
 			+ '</div>'
-			+ this.menuTemplate.boundryImg({imgLink: this.design.spellBotImg});
+			+ menuTemplate.boundryImg({imgLink: design.spellBotImg});
 		abName = setName + " " + spellLvl;
-		this.addAbility(abName,'',spellList,false,charId);
+		addAbility(abName,'',spellList,false,charId);
 		
-	},
+	}; 
 	
 	/**
 	 * A fancy way of saying, 'deal with greater/lesser/(numearl) for spell names'.
 	 * this is for term linking as the PRD and PFSRD refer to a single page for all
 	 * strength varients.
 	 */
-	formatSpellStrength: function(spellName) {
-		if (!spellName) return null;
+	var formatSpellStrength = function(spellName) {
+		if (!spellName) 
+			{return undefined;}
 		var retval = spellName;
 		var strengths = ["mass","lesser","greater","IX","VIII","VII","VI","IV","V","III","II","I"];
 		
-		for (var level in strengths) {
-			if (spellName.indexOf(strengths[level]) != -1) {
-				retval = spellName.replace(strengths[level],"").trim();
-				break;
+		_.every(strengths, function(level) {
+			if (spellName.indexOf(level) !== -1) {
+				retval = spellName.replace(level,"").trim();
+				return false; 
 			}
-		}
+			return true; 
+		}); 
 		return retval;
-	},
+	}; 
 	
 	/**
 	 * Given a string which we recognize as a legal name (spell/feat/whatever)
 	 * and, which we suspect may have a superscript or subscript; remove it.
 	 */
-	formatSuperSubScript: function(str) {
-		if (!str) return null;
+	var formatSuperSubScript = function(str) {
+		if (!str) 
+			{return undefined;}
 		var retval = str;
 		var cases = ["1st","2nd","3rd","4th","5th","6th","7th","8th","9th",
 			"UM","TG","UC","APG","MC","D","B"];
 		var endsWith = function (str, suffix) {
 			return str.indexOf(suffix, str.length - suffix.length) !== -1;
-		}
+		}; 
 		
-		for (script in cases) {
-			if (endsWith(str,cases[script])) {
-				retval = str.replace(cases[script],"").trim();
-				break;
+		_.every(cases, function(subscript) {
+			if (endsWith(str,subscript)) {
+				retval = str.replace(subscript,"").trim();
+				return false; 
 			}
-		}
+			return true; 
+		}); 
 		
 		return retval;
-	},
+	}; 
 	
 	/**
 	 * Format attacks 
 	 */
-	formatAttacks: function(str, type, charId, label, specials) {
-		if (!str || !type || !charId) return null;
-		if (!label) label = type;
-		var volley = null, attacks = null, atkList = null;
+	var formatAttacks = function(str, type, charId, label, specials) {
+		if (!str || !type || !charId) 
+			{return undefined;}
+		if (!label) 
+			{label = type;}
+		var volley, attacks, atkList;
 		var cnt = 0;
 		var alphabet = ['A','B','C','D','E','F','G','H','I','J','K','L','M',
 			'N','O','P','Q','R','S','T','U','V','W','X','Y','Z'];
 
-		atkList = "!\n" + this.fields.menuWhis
-			+ this.menuTemplate.boundryImg({imgLink: this.design.atkTopImg})
-			+ this.menuTemplate.midDiv({imgLink: this.design.atkMidImg})
+		atkList = "!\n" + fields.menuWhis
+			+ menuTemplate.boundryImg({imgLink: design.atkTopImg})
+			+ menuTemplate.midDiv({imgLink: design.atkMidImg})
 				+ '<div style="text-align:center">'
-					+ this.menuTemplate.titleFmt({
-						style: this.design.atkTitleFmt, 
-						title: this.creName
+					+ menuTemplate.titleFmt({
+						style: design.atkTitleFmt, 
+						title: creName
 					})
-					+ this.menuTemplate.titleFmt({
-						style: this.design.atkLabelFmt,
+					+ menuTemplate.titleFmt({
+						style: design.atkLabelFmt,
 						title: type
 					})
 				+'</div>';
@@ -2002,37 +2026,39 @@ var CreatureGenPF = {
 					volley.shift();
 					continue;
 				}
-				if (alphabet.length <= 0) alphabet.unshift(++cnt);
+				if (alphabet.length <= 0) 
+					{alphabet.unshift(++cnt);}
 				attacks = volley[0].split(/,(?![^\(\)]*\))/);
-				atkList += this.addAttacks(attacks,charId,label,specials,alphabet[0]);
+				atkList += addAttacks(attacks,charId,label,specials,alphabet[0]);
 				volley.shift();
 				alphabet.shift();
 			}
 		} else {
 			attacks = str.split(/,(?![^\(\)]*\))/);
-			atkList += this.addAttacks(attacks,charId,label,specials);
+			atkList += addAttacks(attacks,charId,label,specials);
 		}
 
 		atkList = atkList
 			+ '</div>'
-			+ this.menuTemplate.boundryImg({imgLink: this.design.atkBotImg})
-		this.addAbility(label,'',atkList,false,charId);
+			+ menuTemplate.boundryImg({imgLink: design.atkBotImg}); 
+		addAbility(label,'',atkList,false,charId);
 		
 
-	},
+	}; 
 	
 	/**
 	 * Adds attacks
 	 */
-	addAttacks: function(aryList, charId, label, specials, volley) {
-		if (!aryList || !label || !charId) return null;
-		var attack = null, atkName = null, atkMod = null,
-				atkRiders = null, atkDamage = null, atkIter = null,
-				critRange = null, atkStr = null, dmgStr = null,
-				abName = null; iterCnt = null, atkList = ""
-				atkTitle = null;
+	var addAttacks = function(aryList, charId, label, specials, volley) {
+		if (!aryList || !label || !charId) 
+			{return undefined;}
+		var attack, atkName, atkMod,
+			atkRiders, atkDamage, atkIter,
+			critRange, atkStr, dmgStr,
+			abName, iterCnt = 0, atkList = "",
+			atkTitle;
 		
-		this.creLog(aryList + " " + label + " " + volley,1);
+		creLog('addAttacks: ' + aryList + " " + label + " " + volley,1);
 			
 		for (var i = 0; i < aryList.length; ++i) {
 			if (!aryList[i] || !aryList[i].match(/[^\s]+/)) {
@@ -2053,110 +2079,96 @@ var CreatureGenPF = {
 				} else {
 					atkName = attack.substring(0,attack.indexOf('(')).trim();
 				}
-			} else 
+			} else {
 				atkName = attack.substring(
 					0,attack.indexOf(atkName[0])+atkName[0].length).trim();
+			}
 			// Ensure there's a damage section
 			if (attack.match(/\(.+\)/)) {
 				atkMod = attack.substring(atkName.length,attack.indexOf('(')-1).trim();
 				atkDamage = attack.substring(attack.indexOf('(')+1,attack.indexOf(')'));
 				atkRiders = atkMod.match(/\b[^\d\(\)\+\-\/×]+/);
 			} else {
-				atkMod = this.getBonusNumber(attack);
+				atkMod = getBonusNumber(attack);
 				atkDamage = "0";
 			}
 			
-			critRange =this.getCritRange(atkDamage);
-			atkDamage = this.formatDamage(atkDamage,specials);
+			critRange =getCritRange(atkDamage);
+			atkDamage = formatDamage(atkDamage,specials);
+			creLog('addAttacks: got damage for ' + attack,1); 
 			// do iteratives:
 			atkIter = atkMod.split('/');
-			if (atkIter.length > 1)
+			if (atkIter && atkIter.length > 1) {
 				while(atkIter.length > 0) {
 					++iterCnt;
-/*
-					atkStr = "!\n" + this.fields.publicEm + this.fields.publicName + " attacks with "
-						+ atkName + "!\n" 
-						+ this.fields.publicAtkEm + "[[1d20"+(critRange.range<20 ? ("cs>"+critRange.range) : '') 
-						+ atkIter[0] + "]]" + ((critRange.range<20||critRange.multi>2) ?
-							" (" + ((critRange.range<20 ? (critRange.range + "-20"):"")
-							+ (critRange.multi>2 ? ("×" + critRange.multi):"") + ")"):"") 
-						+ (null==atkRiders ? "\n" : ( " ["+atkRiders[0].trim() + "]\n"))
-						+ this.fields.publicDmgEm + atkDamage;
-*/
 
-					atkTitle = this.fields.publicName + " attacks with " + atkName + "!";
+					atkTitle = fields.publicName + " attacks with " + atkName + "!";
 					atkStr = "[[1d20"+(critRange.range<20 ? ("cs>"+critRange.range) : '') 
 						+ atkIter[0] + "]]" + ((critRange.range<20||critRange.multi>2) ?
 							" (" + ((critRange.range<20 ? (critRange.range + "-20"):"")
 							+ (critRange.multi>2 ? ((critRange.range<20 ? '/×':'×') + critRange.multi):"") + ")"):"") 
-						+ (null==atkRiders ? '' : ( " ["+atkRiders[0].trim() + "]"));
+						+ (!atkRiders ? '' : ( " ["+atkRiders[0].trim() + "]"));
 					abName = label + (volley ? ("["+volley+"]") : '')
 						+ "_" + atkName + "(" + iterCnt + ")";
-					atkStr = "!\n" + this.fields.publicAnn + this.applyAtkTemp(this.fields.tmpAtk,atkTitle,atkStr,atkDamage.damage);
-					atkStr = atkStr + (atkDamage.rider=="" ? '':('\n'+this.fields.resultWhis+atkDamage.rider));
-					this.addAbility(abName,'',atkStr,false,charId);
+					atkStr = "!\n" + fields.publicAnn + applyAtkTemp(fields.tmpAtk,atkTitle,atkStr,atkDamage.damage);
+					atkStr = atkStr + (atkDamage.rider==="" ? '':('\n'+fields.resultWhis+atkDamage.rider));
+					addAbility(abName,'',atkStr,false,charId);
 					atkIter.shift();
 					atkList = atkList
-							+ this.menuTemplate.midButton({
-								riders: null,
-								creName: this.creName,
+							+ menuTemplate.midButton({
+								riders: undefined,
+								creName: creName,
 								abName: abName,
 								btnName: abName
 							});
 				}
-			else {
-/*
-				atkStr = "!\n" + this.fields.publicEm + this.fields.publicName + " attacks with "
-					+ atkName + "!\n" 
-					+ this.fields.publicAtkEm + "[[1d20"+(critRange.range<20 ? ("cs>"+critRange.range) : '') + atkMod +"]]"
-					+ ((critRange.range<20||critRange.multi>2) ?
-							" (" + ((critRange.range<20 ? (critRange.range + "-20"):"")
-							+ (critRange.multi>2 ? ("×" + critRange.multi):"") + ")"):"") 
-					+ (null==atkRiders ? "\n" : ( " ["+atkRiders[0].trim()+"]\n"))
-					+ this.fields.publicDmgEm + atkDamage;
-*/
-				atkTitle = this.fields.publicName + " attacks with " + atkName + "!";
-				atkStr = (atkMod != '' ? "[[1d20"+(critRange.range<20 ? ("cs>"+critRange.range) : '') 
+			} else {
+				atkTitle = fields.publicName + " attacks with " + atkName + "!";
+				atkStr = (atkMod !== '' ? "[[1d20"+(critRange.range<20 ? ("cs>"+critRange.range) : '') 
 					+ atkMod + "]]" : 'auto-hit') + ((critRange.range<20||critRange.multi>2) ?
 						" (" + ((critRange.range<20 ? (critRange.range + "-20"):"")
 						+ (critRange.multi>2 ? ((critRange.range<20 ? '/×':'×') + critRange.multi):"") + ")"):"") 
-					+ (null==atkRiders ? '' : ( " ["+atkRiders[0].trim() + "]"));
+					+ (!atkRiders ? '' : ( " ["+atkRiders[0].trim() + "]"));
 				abName = label + (volley ? ("["+volley+"]") : '')
 						+ "_" + atkName;
-				atkStr = "!\n" + this.fields.publicAnn + this.applyAtkTemp(this.fields.tmpAtk,atkTitle,atkStr,atkDamage.damage);
-				atkStr = atkStr + (atkDamage.rider=="" ? '':('\n'+this.fields.resultWhis+atkDamage.rider));
+				atkStr = "!\n" + fields.publicAnn + applyAtkTemp(fields.tmpAtk,atkTitle,atkStr,atkDamage.damage);
+				atkStr = atkStr + (atkDamage.rider==="" ? '':('\n'+fields.resultWhis+atkDamage.rider));
 				
-				this.addAbility(abName,'',atkStr,false,charId);
+				addAbility(abName,'',atkStr,false,charId);
 				atkList = atkList
-							+ this.menuTemplate.midButton({
-								riders: null,
-								creName: this.creName,
+							+ menuTemplate.midButton({
+								riders: undefined,
+								creName: creName,
 								abName: abName,
 								btnName: abName
 							});
 			}
-			this.creLog(attack + " atkname: '" + atkName + "' atkmod: '" + atkMod + "' atkDam: '"
+			creLog('addAttacks: ' + attack + " atkname: '" + atkName + "' atkmod: '" + atkMod + "' atkDam: '"
 				+ atkDamage + "' atkRiders: '" + atkRiders + "'",1);
 		}
+		creLog('addAttacks: finished attacks for ' + label,1); 
 		return atkList;
-	},
+	}; 
 	
 	/**
 	 * Gets the crit range from the damage string.
 	 */
-	getCritRange: function(str) {
-		if (!str) return {range: 20, multi: 2};
-		var retval = null, multi = 2,range = 20,tmp = "";
+	var getCritRange = function(str) {
+		if (!str) 
+			{return {range: 20, multi: 2};}
+		var retval, multi = 2,range = 20,tmp = "";
 		var terms = str.split("/");
 		
-		if (terms.length > 0) {
+		if (terms && terms.length > 0) {
 			for (var i = 0; i < terms.length; ++i) {
 				if (terms[i].match(/×\d+/)) {
 					multi = terms[i].match(/\d+/g);
-					if (!multi) multi = 2;
+					if (!multi) 
+						{multi = 2;}
 				} else if ((tmp=terms[i].match(/\b\d+\-\d+/))) {
 					range = tmp[0].match(/\d+/g);
-					if (!range) range = 2;
+					if (!range) 
+						{range = 2;}
 				}	
 			}
 		}
@@ -2166,58 +2178,59 @@ var CreatureGenPF = {
 			multi: parseInt(multi)
 		};
 		return retval;
-	},
+	}; 
 	
 	/**
 	 * Format the damage string and attach any riders if any. Be careful about
 	 * subrider semantics.
 	 */
-	formatDamage: function(str, specials) {
-		if (!str) return {damage: "", rider: ""};
-		var retval = null;
-		var damage=null, damageStr="", damageExpr=null, 
-			damageTypes=null,riders=null,riderStr="",ploc = -1,tmp = null;
+	var formatDamage = function(str, specials) {
+		if (!str) 
+			{return {damage: "", rider: ""};}
+		var retval;
+		var damage, damageStr="", damageExpr, 
+			damageTypes,riders,riderStr="",ploc = -1,tmp;
 		var re = /\d+d\d+/;
 		
-		this.creLog("formatDamage str: " + str,2);
+		creLog("formatDamage str: " + str,2);
 		damage = re.exec(str);
 		ploc = str.indexOf('plus');
 		
 		// if flat, or rider only damage section
-		if (damage == null) {
-			if (ploc != -1) {
+		if (!damage) {
+			if (ploc !== -1) {
 				damageStr = str.substring(0,ploc).match(/\b[\d]+\s/);
 				if (!damageStr) {
 					damageStr = str.match(/\b[^\d\/\(\)\+×\s]+\b/);
-					this.creLog("damageStr: " + damageStr,3);
+					creLog("damageStr: " + damageStr,3);
 					if (!damageStr) // give up if things get too weird
-						throw "ERROR: Bad damage format: '" + str + "'";
+						{throw "ERROR: Bad damage format: '" + str + "'";}
 					str = str.substring(0,ploc+4)
 						+ ' ' + damageStr[0].trim() + ','
 						+ str.substring(ploc+4);
 				}
-			} else if ((damageStr = str.match(/\b[^\d\/\(\)\+×\s]+\b/)) != null) {
+			} else if (!!(damageStr = str.match(/\b[^\d\/\(\)\+×\s]+\b/))) {
 				str = str + " plus " + damageStr[0].trim();
 			}
-			damageStr = '[[0d0]]'
+			damageStr = '[[0d0]]'; 
 		} else {
-			damageExpr = this.getExpandedExpr(damage[0],str,damage.index).trim();
-			damageStr = this.getFormattedRoll(damageExpr);
+			damageExpr = getExpandedExpr(damage[0],str,damage.index).trim();
+			damageStr = getFormattedRoll(damageExpr);
 			// handle damage type
 			damageTypes = str.match(/\b[^\d\/\(\)\+×]+\b/);
 			if (damageTypes) {
 				/* In the case where we have a type we need to get rid of the critical
 					expression */
-				this.creLog("formatDamage Types: " + damageTypes,3);
-				if (str.match("plus") == null) {
+				creLog("formatDamage Types: " + damageTypes,3);
+				if (!str.match("plus")) {
 					tmp = str.indexOf('/');
 					tmp = str.substring(str.indexOf(damageExpr)+damageExpr.length,
-						(tmp==-1 ? str.length:tmp)).trim();
+						(tmp===-1 ? str.length:tmp)).trim();
 					damageStr += " " + tmp;
 				} else {
 					tmp = str.indexOf('/');
 					tmp = str.substring(str.indexOf(damageExpr)+damageExpr.length,
-						(tmp==-1 ? ploc:tmp)).trim();
+						(tmp===-1 ? ploc:tmp)).trim();
 					damageStr += " " + tmp;
 				}
 			}
@@ -2226,13 +2239,13 @@ var CreatureGenPF = {
 		// handle riders
 		if (str.match("plus")) {
 			riders = str.substring(str.indexOf("plus"));
-			this.creLog("riders are: " + riders,3);
+			creLog("riders are: " + riders,3);
 			riders = riders.replace("plus","");
 			var ary = riders.split(/,(?![^\(\)]*\))/);
-			var riderName = null;
-			var subRiders = null;
-			this.creLog('ary: ' + ary);
-			while (ary.length > 0) {
+			var riderName;
+			var subRiders;
+			creLog('ary: ' + ary);
+			while (ary && ary.length > 0) {
 				if (!ary[0] || !ary[0].match(/[^\s]+/)) {
 					ary.shift();
 					continue;
@@ -2247,66 +2260,69 @@ var CreatureGenPF = {
 				}
 				subRiders = ary[0].replace(riderName,'').trim();
 				riderName = riderName.toLowerCase().trim();
-				this.creLog("ary val: " + ary[0],4);
-				this.creLog("subrider: " + subRiders + " riderName: " + riderName,4);
-				this.creLog("specials: " + specials[riderName],4);
+				creLog("ary val: " + ary[0],4);
+				creLog("subrider: " + subRiders + " riderName: " + riderName,4);
+				creLog("specials: " + specials[riderName],4);
 				if (!specials) {
 					riderStr +=
 						"<div>"
-							+ this.getTermLink(riderName,this.termEnum.GENERAL) 
-							+ " "+(subRiders.match(/[^\s]+/) ? (" "+this.getFormattedRoll(subRiders)) : '')
+							+ getTermLink(riderName,termEnum.GENERAL) 
+							+ " "+(subRiders.match(/[^\s]+/) ? (" "+getFormattedRoll(subRiders)) : '')
 						+ "</div>";
 				} else {
 					riderStr +=
 						"<div>"
-							+ ((specials[riderName] ? this.getFormattedRoll(this.getDamageRiderInfo(riderName,specials)) : undefined) || this.getTermLink(riderName,this.termEnum.GENERAL))
-							+ " "+(subRiders.match(/[^\s]+/) ? (" "+this.getFormattedRoll(subRiders,this.termEnum.GENERAL)) : '');
+							+ ((specials[riderName] ? getFormattedRoll(getDamageRiderInfo(riderName,specials)) : undefined) || getTermLink(riderName,termEnum.GENERAL))
+							+ " "+(subRiders.match(/[^\s]+/) ? (" "+getFormattedRoll(subRiders,termEnum.GENERAL)) : '')
 						+ "</div>";
 				}
 				ary.shift();
 			}
 		}
-		this.creLog("formatDamage: " + damageStr + " riders: " + riderStr,1);
+		creLog("formatDamage: " + damageStr + " riders: " + riderStr,1);
 		retval = {
 			damage: damageStr,
 			rider: riderStr
 		};
 		return retval;
-	},
+	}; 
 	
 	/**
 	 * Gets all damage rider information
 	 */
-	getDamageRiderInfo: function(riderName,specials) {
+	var getDamageRiderInfo = function(riderName,specials) {
 		var retval = "";
-		var riderInfo = null;
-		var re = null;
+		var riderInfo;
+		var re;
 		if (specials) {
 			riderInfo = specials[riderName];
-			this.creLog("RiderInfo: " + riderInfo,3);
-			if (riderInfo != null)
+			creLog("RiderInfo: " + riderInfo,3);
+			if (riderInfo) {
 				while(riderInfo.length > 0) {
 					re = new RegExp("\\b"+riderName+"\\b",'ig');
 					riderInfo[0] = riderInfo[0].replace(
-						re,this.getTermLink(riderName,this.termEnum.GENERAL)+" ");
+						re,getTermLink(riderName,termEnum.GENERAL)+" ");
 					retval += "<p>" + riderInfo[0] + "</p>" ;
-					this.creLog("RiderInfoLine: " + retval,3);
+					creLog("RiderInfoLine: " + retval,3);
 					riderInfo.shift();
 				}
+			}
 		}
 		return retval;
-	},
+	}; 
 	
 	/**
 	 * Format an attribute by the type desired:
 	 * 0 - scalar, grab the first number
 	 * 1 - pos/neg, grab the first number as well as the sign if any
 	 */
-	formatAttribute: function(name, type, charId) {
-		if (!name || !charId) return null;
-		if (!type) type = 0;
+	var formatAttribute = function(name, type, charId) {
+		if (!name || !charId) 
+			{return undefined;}
+		if (!type) 
+			{type = 0;}
 		var retval = 0;
-		var attr = null;
+		var attr;
 		
 		attr = findObjs({
 				_type: "attribute",
@@ -2324,38 +2340,44 @@ var CreatureGenPF = {
 				retval = retval.match(/\d+/g)[0];
 				break;
 			case 1:
-				retval = this.getBonusNumber(retval);
+				retval = getBonusNumber(retval);
 				break;
 		}
-		this.creLog("formatAttribute: " + retval +	" n: " + name + " t: " + type + " c: " + charId,2);
+		creLog("formatAttribute: " + retval +	" n: " + name + " t: " + type + " c: " + charId,2);
 			
 		attr.set('current',retval);
 		attr.set('max',retval);
 		return retval;
-	},
+	}; 
 	
 	/**
 	 * Apply attack template
 	 */
-	applyAtkTemp: function(template,titleStr,atkStr,dmgStr) {
-		if (!template || !titleStr || !atkStr || !dmgStr) return null;
-		this.creLog("title: " + titleStr + " atk " + atkStr + " dmg " + dmgStr + template,2);
-		var retval = null;
-		if (!template.match(this.atkEnum.ATTACK) || !template.match(this.atkEnum.DAMAGE)) {
+	var applyAtkTemp = function(template,titleStr,atkStr,dmgStr) {
+		if (!template || !titleStr || !atkStr || !dmgStr) 
+			{return undefined;}
+		creLog("title: " + titleStr + " atk " + atkStr + " dmg " + dmgStr + template,2);
+		var retval;
+		if (!template.match(atkEnum.ATTACK) || !template.match(atkEnum.DAMAGE)) {
 			log("attack template is malformed");
 			return retval;
 		}
-		retval = template.replace('<<'+this.atkEnum.TITLE+'>>',titleStr);
-		retval = retval.replace('<<'+this.atkEnum.ATTACK+'>>',atkStr);
-		retval = retval.replace('<<'+this.atkEnum.DAMAGE+'>>',dmgStr);
+		retval = template.replace('<<'+atkEnum.TITLE+'>>',titleStr);
+		retval = retval.replace('<<'+atkEnum.ATTACK+'>>',atkStr);
+		retval = retval.replace('<<'+atkEnum.DAMAGE+'>>',dmgStr);
 		return retval;
-	},
+	}; 
 
 	/**
 	 * Add an attribute to a character
 	 */
-	addAttribute: function(name, curVal, maxVal, charId) {
-		this.creLog("addAttribute: " + name + " " + curVal + " " + maxVal + " " + charId,2);
+	var addAttribute = function(name, curVal, maxVal, charId) {
+		if (!curVal)
+			//{throw 'Cannot add ' + name + ' with no value';}
+			{curVal = '';}
+		if (!maxVal)
+			{maxVal = '';}
+		creLog("addAttribute: " + name + " " + curVal + " " + maxVal + " " + charId,2);
 			
 		createObj("attribute", {
 				name: name,
@@ -2363,12 +2385,12 @@ var CreatureGenPF = {
 				max: maxVal,
 				characterid: charId
 			});
-	},
+	}; 
 	
 	/**
 	 * Add an ability to a character
 	 */
-	addAbility: function(name, desc, action, isTokenAct, charId) {
+	var addAbility = function(name, desc, action, isTokenAct, charId) {
 		createObj("ability", {
 			name: name,
 			description: desc,
@@ -2376,14 +2398,16 @@ var CreatureGenPF = {
 			istokenaction: isTokenAct,
 			characterid: charId
 			});
-	},
+	}; 
 	
 	/**
 	 * Add an ability roll from an attribute
 	 */
-	addAttributeRoll: function(name, attrName, isPublic, isTokenAction, charId, rider) {
-		if (!name,!attr,!charId) return null;
-		if (!isPublic) isPublic = false;
+	var addAttributeRoll = function(name, attrName, isPublic, isTokenAction, charId, rider) {
+		if (!name,!attr,!charId) 
+			{return undefined;}
+		if (!isPublic) 
+			{isPublic = false;}
 		var action = "";
 		var attr = findObjs({
 				_type: "attribute",
@@ -2393,149 +2417,159 @@ var CreatureGenPF = {
 		if (!attr) {
 			throw ("Error: no attribute found '" + name + "'");
 		}
-		action = "!\n" + (isPublic ? this.fields.publicAnn : this.fields.resultWhis) + 
-			this.creName + ": " + attrName + ": [[ 1d20" 
-			+ this.getBonusNumber(attr.get('current')) + (rider ? " "+rider:'') + "]]";
+		action = "!\n" + (isPublic ? fields.publicAnn : fields.resultWhis) + 
+			creName + ": " + attrName + ": [[ 1d20" 
+			+ getBonusNumber(attr.get('current')) + (rider ? " "+rider:'') + "]]";
 			
-		this.addAbility(name,"",action,isTokenAction,charId);
-	},
+		addAbility(name,"",action,isTokenAction,charId);
+	}; 
 	
 	/**
 	 * Given a line containing the most attributes, add them to the
 	 * character
 	 */
-	addAttrList: function(line, aryList, startFnd, termChars, charId) {
-		if (!aryList || !termChars || !charId) return null;
-		if (!line) line = this.data[0];
-		if (!startFnd) startFnd = 0;
+	var addAttrList = function(data,line, aryList, startFnd, termChars, charId) {
+		if (!aryList || !termChars || !charId) 
+			{return undefined;}
+		if (!line) 
+			{line = data[0];}
+		if (!startFnd) 
+			{startFnd = 0;}
+		var rc; 
 		
-		this.creLog("addAttrList: " + startFnd + " " + termChars + " " + charId + " " + line + " " + (aryList==null),3);
+		creLog("addAttrList: " + startFnd + " " + termChars + " " + charId + " " + line + " " + (!!aryList),3);
 		while(aryList.length > 0) {
-			rc = this.getValueByName(aryList[0],line,termChars);
-			if (rc == null) {
-				var nextBestLine = this.getLineByName(aryList[0],this.data,startFnd);
-				rc = this.getValueByName(aryList[0],nextBestLine,termChars);
-				if (rc == null) {
+			rc = getValueByName(aryList[0],line,termChars);
+			if (!rc) {
+				var nextBestLine = getLineByName(aryList[0],data,startFnd);
+				rc = getValueByName(aryList[0],nextBestLine,termChars);
+				if (!rc) {
 					throw ("ERROR: could not find attribute " + aryList[0]);
 				}
 			}
-			this.addAttribute(aryList[0],rc,rc,charId);
+			addAttribute(aryList[0],rc,rc,charId);
 			aryList.shift();
 		}
-	},
+	}; 
 	
 	/**
 	 * Return a link whose format depends on type
 	 */
-	getTermLink: function(str,type,label) {
-		if (!str || !type) return null;
-		if (!label) label = str;
+	var getTermLink = function(str,type,label) {
+		if (!str || !type) 
+			{return undefined;}
+		if (!label) 
+			{label = str;}
 		var retval = str;
 		switch(type) {
-			case this.termEnum.GENERAL:
-				retval = this.getFormattedUrl(str,this.fields.urlTermGeneral,label);
+			case termEnum.GENERAL:
+				retval = getFormattedUrl(str,fields.urlTermGeneral,label);
 				break;
-			case this.termEnum.SPELL:
-				retval = this.getFormattedUrl(str,this.fields.urlTermSpell,label);
+			case termEnum.SPELL:
+				retval = getFormattedUrl(str,fields.urlTermSpell,label);
 				break;
-			case this.termEnum.FEAT:
-				retval = this.getFormattedUrl(str,this.fields.urlTermFeat,label);
+			case termEnum.FEAT:
+				retval = getFormattedUrl(str,fields.urlTermFeat,label);
 				break;
-			case this.termEnum.SQ:
-				retval = this.getFormattedUrl(str,this.fields.urlTermSQ,label);
+			case termEnum.SQ:
+				retval = getFormattedUrl(str,fields.urlTermSQ,label);
 				break;
-			case this.termEnum.SA:
-				retval = this.getFormattedUrl(str,this.fields.urlTermSA,label);
+			case termEnum.SA:
+				retval = getFormattedUrl(str,fields.urlTermSA,label);
 				break;
 			default:
 				retval = str;
 		}
-		this.creLog("getTermLink: " + retval,3);
+		creLog("getTermLink: " + retval,3);
 		return retval;
-	},
+	}; 
 
 	/**
 	 * Return a formatted URL by filling in placeholders. with str and label
 	 */
-	getFormattedUrl: function(str,url,label) {
-		if (!str || !url) return null;
-		if (!label) label = str;
-		var retval = null;
+	var getFormattedUrl = function(str,url,label) {
+		if (!str || !url) 
+			{return undefined;}
+		if (!label) 
+			{label = str;}
+		var retval;
 		var re = /<<\w+>>/g;
-		var matches = null, cond = null;
+		var matches, cond;
 		
-		this.creLog("formatting str: '" + str + "' on url: '" + url + "'",4);
+		creLog("formatting str: '" + str + "' on url: '" + url + "'",4);
 		if ((matches=url.match(re))) {
 			while (matches.length > 0) {
-				this.creLog("formaturl: " + matches[0],5);
+				creLog("formaturl: " + matches[0],5);
 				matches[0] = matches[0].replace(/<<|>>/g,"");
 				if ((cond=matches[0].match(/\D+/))) {
-					this.creLog("formaturl word: " + cond[0],5);
+					creLog("formaturl word: " + cond[0],5);
 					switch(cond[0]) {
-						case this.urlCondEnum.FULL:
-							url=url.replace("<<"+this.urlCondEnum.FULL+">>",str);
+						case urlCondEnum.FULL:
+							url=url.replace("<<"+urlCondEnum.FULL+">>",str);
 							break;
-						case this.urlCondEnum.LABEL:
-							url=url.replace("<<"+this.urlCondEnum.LABEL+">>",label)
+						case urlCondEnum.LABEL:
+							url=url.replace("<<"+urlCondEnum.LABEL+">>",label); 
 							break;
 						default:
-							this.creLog("unsupported url subsitution: " + matches[0],1);
+							creLog("unsupported url subsitution: " + matches[0],1);
 					}
 					
 				} else if ((cond=matches[0].match(/\d+/))) {
 					cond = parseInt(cond);
-					this.creLog("formaturl char: " + cond,5);
+					creLog("formaturl char: " + cond,5);
 					if (cond < str.length) 
-						url=url.replace("<<"+matches[0]+">>",str[cond]);
+						{url=url.replace("<<"+matches[0]+">>",str[cond]);}
 					else
-						this.creLog("illegal string index of " + cond + " in '" + str + "'",1);
+						{creLog("illegal string index of " + cond + " in '" + str + "'",1);}
 				}
 				matches.shift();
 			}
 		}
 		retval = url;
-		this.creLog("formattedUrl: " + retval,4);
+		creLog("formattedUrl: " + retval,4);
 		return retval;
-	},
+	}; 
 
 	/**
 	 * Get the bonus number in the string, carefully looking for signs to
 	 * preserve negatives and what not. TODO there's a Regex solution to this
 	 * which is way shorter.. also add type for scalars.
 	 */
-	getBonusNumber: function(str,type) {
-		if (!str) return null;
-		if (!type) type = this.bonusEnum.SIGN;
+	var getBonusNumber = function(str,type) {
+		if (!str) 
+			{return 0;}
+		if (!type) 
+			{type = bonusEnum.SIGN;}
 		var retval = 0;
 		var locStart = 0;
 		var locEnd = str.length;
-		var nums = null;
+		var num;
 		
 		str = str.replace(/\s/g,"");
 		switch (type) {
-			case this.bonusEnum.SCALAR:
+			case bonusEnum.SCALAR:
 				num = str.match(/\d+/);
 				if (num)
-					retval = num[0];
+					{retval = num[0];}
 				else
-					retval = "0";
+					{retval = "0";}
 				break;
-			case this.bonusEnum.SIGN:
+			case bonusEnum.SIGN:
 				num = str.match(/\+*\-*\d+/);
 				if (num) {
-					if (null == num[0].match(/\+|\-/))
-						retval = "+" + num[0];
+					if (!num[0].match(/\+|\-/))
+						{retval = "+" + num[0];}
 					else
-						retval = num[0];
+						{retval = num[0];}
 				} else
-					retval = "+0";
+					{retval = "+0";}
 				break;
 			default:
 				// impossible
-				return null;
+				return undefined;
 		}
 		return retval;
-	},
+	}; 
 	
 	/**
 	 * Return the string with the roll formatted, this is accomplished by simply
@@ -2543,21 +2577,22 @@ var CreatureGenPF = {
 	 * single regex
 	 * 
 	 */
-	getFormattedRoll: function(str) {
-		if (!str) return "";
+	var getFormattedRoll = function(str) {
+		if (!str) 
+			{return "";}
 		var retval = str;
 		var re = /\d+d\d+/;
-		var idx = null, expr = null, roll = null, pre = null, post = null;
+		var idx, expr, roll, pre, post;
 
-		if ((roll=re.exec(str)) != null) {
-			expr = this.getExpandedExpr(roll[0],str,roll.index);
+		if (!!(roll=re.exec(str))) {
+			expr = getExpandedExpr(roll[0],str,roll.index);
 			idx = str.indexOf(expr);
 			pre = str.substring(0,idx);
 			post = str.substring(idx+expr.length);
 		} else { return str;}
 		
-		return pre+"[["+expr+"]]"+this.getFormattedRoll(post);
-	},
+		return pre+"[["+expr+"]]"+getFormattedRoll(post);
+	}; 
 	
 	/**
 	 * Return the target expression expanded as far as it logically can span
@@ -2569,44 +2604,47 @@ var CreatureGenPF = {
 	 * 
 	 * result = 2+1d20+5+2d4
 	 */
-	getExpandedExpr: function(target, line, locHint) {
-		if (!target || !line) return null;
-		if (!locHint) locHint = 0;
+	var getExpandedExpr = function(target, line, locHint) {
+		if (!target || !line) 
+			{return undefined;}
+		if (!locHint) 
+			{locHint = 0;}
 		var retval = target;
 		var expr = target;
 		var re = /\d|[\+\-]|d/;
 		var loc = -1, start = 0, end = 0;
 		
-		if((loc=line.indexOf(target,locHint)) != -1) {
+		if((loc=line.indexOf(target,locHint)) !== -1) {
 			start = loc;
 			while (start > 0) {
 				if (line[start].match(re))
-					start--;
+					{start--;}
 				else
 					{start++;break;}
 			}
 			end = loc;
 			while (end < line.length) {
 				if (line[end].match(re))
-					end++;
+					{end++;}
 				else
-					break;
+					{break;}
 			}
 			retval = line.substring(start,end);
-			this.creLog("getExpandedExpr: '" 
+			creLog("getExpandedExpr: '" 
 					+ retval + "' s: " + start + " e: " + end + " t: " + target + " l: " + line,4);
-			retval = this.getLegalRollExpr(retval);
+			retval = getLegalRollExpr(retval);
 		}
 		
 		return retval;
-	},
+	}; 
 	
 	/**
 	 * Gets a legal roll expression.
 	 * TODO strip trailing operands +1d6 and such
 	 */
-	getLegalRollExpr: function(expr) {
-		if (!expr) return null;
+	var getLegalRollExpr = function(expr) {
+		if (!expr) 
+			{return undefined;}
 		var retval = expr;
 		var stray = expr.match(/d/g);
 		var valid = expr.match(/\d+d\d+/g);
@@ -2617,159 +2655,176 @@ var CreatureGenPF = {
 			|| !stray 
 			|| !valid 
 			|| (stray.length =! valid.length))
-				throw errMsg;
+				{throw errMsg;}
 			stray = expr.match(/\+/g);
 			valid = expr.match(/\d+\+\d+/g);
-			if ((stray != null) && (valid != null) 
-			&& (stray.length != valid.length))
-				throw errMsg;
+			if (stray && valid
+			&& (stray.length !== valid.length))
+				{throw errMsg;}
 			stray = expr.match(/-/g);
 			valid = expr.match(/\d+-\d+/g);
-			if ((stray != null) && (valid != null) 
-			&& (stray.length != valid.length))
-				throw errMsg;
+			if (stray && valid
+			&& (stray.length !== valid.length))
+				{throw errMsg;}
 		} catch (e) {
-			this.creLog(e,1);
+			creLog(e,1);
 			throw e;
 		}
 		
 		//check for leading, trailing, operands
 		if (retval[0].match(/\+|\-/))
-			retval = retval.substring(1);
+			{retval = retval.substring(1);}
 		if (retval[retval.length-1].match(/\+|\-/))
-			retval = retval.substring(0,retval.length-1);
+			{retval = retval.substring(0,retval.length-1);}
 		
-		this.creLog("getLegalRollExpr: " + retval,4);
+		creLog("getLegalRollExpr: " + retval,4);
 		return retval;
-	},
+	}; 
 	
 	/**
 	 * Given a name, array of lines, and a start/end location, find the first 
 	 * line that contains the given name.
 	 */
-	getLineByName: function(strName, aryLines, locStart, locEnd) {
-		if (!strName || !aryLines) return null;
-		if (!locStart) locStart = 0;
-		if (!locEnd) locEnd = aryLines.length;
-		var retval = null;
+	var getLineByName = function(strName, aryLines, locStart, locEnd) {
+		creLog('getLineByName: name ' + strName + ' data ' + !!aryLines,5); 
+		if (!strName || !aryLines) 
+			{return undefined;}
+		if (!locStart) 
+			{locStart = 0;}
+		if (!locEnd) 
+			{locEnd = aryLines.length;}
+		var retval;
 		
-		this.creLog("getLineByName: " + strName + " " + locStart + " " + locEnd + " " + (aryLines==null),5);
-		for (var i = locStart; i < locEnd; ++i)
-			if (aryLines[i].indexOf(strName) != -1) {
+		creLog("getLineByName: " + strName + " " + locStart + " " + locEnd + " " + (!!aryLines),5);
+		for (var i = locStart; i < locEnd; ++i) {
+			if (aryLines[i].indexOf(strName) !== -1) {
 				retval = aryLines[i];
 				break;
 			}
+		}
+		creLog('getLineByName: name ' + strName + ' value \'' + retval,5); 
 		return retval;
-	},
+	}; 
 
 	/**
 	 * Given a name, array of lines, and a start/end location, find the first
 	 * line # that contains the given name.
 	 */
-	getLineNumberByName: function(strName, aryLines, locStart, locEnd) {
-		if (!strName || !aryLines) return null;
-		if (!locStart) locStart = 0;
-		if (!locEnd) locEnd = aryLines.length;
-		var retval = null;
+	var getLineNumberByName = function(strName, aryLines, locStart, locEnd) {
+		if (!strName || !aryLines) 
+			{return undefined;}
+		if (!locStart) 
+			{locStart = 0;}
+		if (!locEnd) 
+			{locEnd = aryLines.length;}
+		var retval;
 		
-		this.creLog("getLineByName: " + strName + " " + locStart + " " + locEnd + " " + (aryLines==null),5);
-		for (var i = locStart; i < locEnd; ++i)
-			if (aryLines[i].indexOf(strName) != -1) {
+		creLog("getLineNumberByName: " + strName + " " + locStart + " " + locEnd + " " + (!!aryLines),5);
+		for (var i = locStart; i < locEnd; ++i) {
+			if (aryLines[i].indexOf(strName) !== -1) {
 				retval = i;
 				break;
 			}
+		}
 		return retval;
-	},
+	}; 
 	
 	/**
 	 * Given a line, name, and terminators return the value, value is
 	 * the the trimed text after the name and before the terminator.
 	 */
-	getValueByName: function(strName, strLine, termChars) {
-		if (!strLine || !strName || !termChars) return null;
-		var retval = null;
+	var getValueByName = function(strName, strLine, termChars) {
+		if (!strLine || !strName || !termChars) 
+			{return undefined;}
+		var retval;
 		var loc = -1;
 		var locTerm = strLine.length;
 		
-		this.creLog("getValueByName: " + strName + " " + termChars + " " + strLine,5);
-		if ((loc=strLine.indexOf(strName)) != -1) {
+		creLog("getValueByName: " + strName + " " + termChars + " " + strLine,5);
+		if ((loc=strLine.indexOf(strName)) !== -1) {
 			for (var i = 0; i < termChars.length; ++i) {
 				var tmp = strLine.indexOf(termChars[i],loc);
-				if ((tmp != -1) && (tmp < locTerm)) 
-					locTerm = tmp;
+				if ((tmp !== -1) && (tmp < locTerm)) 
+					{locTerm = tmp;}
 			}
 			if (locTerm > loc) {
-				locTerm = CreatureGenPF.getParenSafeTerm(
+				locTerm = getParenSafeTerm(
 					strLine,loc,locTerm,termChars);
 				retval = strLine.substring(loc+strName.length,locTerm);
 			}
 		}
 		return retval;
-	},
+	}; 
 	
 	/**
 	 * Get the location of the closest terminator that is paren safe. If there
 	 * are parens. Probably a faster way exists using regex and exec..
 	 */
-	getParenSafeTerm: function(strLine, start, end, termChars) {
+	var getParenSafeTerm = function(strLine, start, end, termChars) {
 		var newTerm = -1;
 		var inParen = 0;
 		var closeLoc = -1;
+		var i; 
 		
-		if (start >= end) return end;
-		for (var i = start; i < strLine.length; ++i) {
-			if (strLine[i] == '(')
-				inParen++;
-			else if (strLine[i] ==')')
-				inParen--;
+		if (start >= end) 
+			{return end;}
+		for (i = start; i < strLine.length; ++i) {
+			if (strLine[i] === '(')
+				{inParen++;}
+			else if (strLine[i] ===')')
+				{inParen--;}
 			if (i >= end) {
-				if (inParen <= 0) return end;
-				else if (inParen > 0) break;
+				if (inParen <= 0) 
+					{return end;}
+				else if (inParen > 0) 
+					{break;}
 			}
 		}
-		if (inParen <= 0) return end;
+		if (inParen <= 0) 
+			{return end;}
 		
 		// if we found we're in parens
-		this.creLog("in parens for " + strLine + " openparens: " + inParen,5);
+		creLog("in parens for " + strLine + " openparens: " + inParen,5);
 		closeLoc = strLine.indexOf(')',start);
 		end = strLine.length;
-		if (closeLoc == -1) return end;
-		for (var i = 0; i < termChars.length; ++i) {
-			if (-1 == (newTerm=strLine.indexOf(termChars[i],closeLoc)))
-				newTerm = strLine.length;
+		if (closeLoc === -1) 
+			{return end;}
+		for (i = 0; i < termChars.length; ++i) {
+			if (-1 === (newTerm=strLine.indexOf(termChars[i],closeLoc)))
+				{newTerm = strLine.length;}
 			else if (newTerm < end)
-				end = newTerm;
+				{end = newTerm;}
 		}
 		return end;
-	},
+	}; 
 	
 	/**
 	 * check if the character object exists, return first match
 	 */
-	characterObjExists: function(name, type, charId) {
-		var retval = null;
+	var characterObjExists = function(name, type, charId) {
+		var retval;
 		var obj = findObjs({
 			_type: type,
 			name: name,
 			_characterid: charId 
 		});
-		this.creLog("type: " + type + " name: " + name + " charId: " + charId + " retval: " + obj,5);
+		creLog("type: " + type + " name: " + name + " charId: " + charId + " retval: " + obj,5);
 		if (obj.length > 0)
-			retval = obj[0];
+			{retval = obj[0];}
 		return retval;
-	},
+	}; 
 	
 	/** removes all occurence of removeStr in str and replaces them with 
 	 * replaceWidth
 	 * 
 	 * @author Andy W.
 	 */
-	stripString: function(str, removeStr, replaceWith) {
-		while (str.indexOf(removeStr) != -1) {
+	var stripString = function(str, removeStr, replaceWith) {
+		while (str.indexOf(removeStr) !== -1) {
 			str = str.replace(removeStr, replaceWith);
 		}
 		return str;
-	},
+	}; 
 
 	/**
 	 * Cleans the string preserving select special characters and dropping the
@@ -2778,119 +2833,125 @@ var CreatureGenPF = {
 	 * @author Andy W.
 	 * @contributor Ken L.
 	 */
-	cleanString: function(strSpecials) {
-		strSpecials = this.stripString(strSpecials, "%20", ' ');
-		strSpecials = this.stripString(strSpecials, "%22", '"');
-		strSpecials = this.stripString(strSpecials, "%29", ')');
-		strSpecials = this.stripString(strSpecials, "%28", '(');
-		strSpecials = this.stripString(strSpecials, "%2C", ',');
-		strSpecials = this.stripString(strSpecials, "%42", '');
-		strSpecials = this.stripString(strSpecials, "*", '');
-		strSpecials = this.stripString(strSpecials, '\n', '');
-		strSpecials = this.stripString(strSpecials, '%3Cbr', '');
+	var cleanString = function(strSpecials) {
+		strSpecials = stripString(strSpecials, "%20", ' ');
+		strSpecials = stripString(strSpecials, "%22", '"');
+		strSpecials = stripString(strSpecials, "%29", ')');
+		strSpecials = stripString(strSpecials, "%28", '(');
+		strSpecials = stripString(strSpecials, "%2C", ',');
+		strSpecials = stripString(strSpecials, "%42", '');
+		strSpecials = stripString(strSpecials, "*", '');
+		strSpecials = stripString(strSpecials, '\n', '');
+		strSpecials = stripString(strSpecials, '%3Cbr', '');
 		
-		strSpecials = this.stripString(strSpecials, "%09", '	');
-		strSpecials = this.stripString(strSpecials, "%3C", '<');
-		strSpecials = this.stripString(strSpecials, "%3E", '>');
-		strSpecials = this.stripString(strSpecials, "%23", '#');
-		strSpecials = this.stripString(strSpecials, "%3A", ':');
-		strSpecials = this.stripString(strSpecials, "%3B", ';');
-		strSpecials = this.stripString(strSpecials, "%3D", '=');
-		strSpecials = this.stripString(strSpecials, "%D7", '×');
-		strSpecials = this.stripString(strSpecials, "%u2018", '');
-		strSpecials = this.stripString(strSpecials, "%u2019", '');
-		strSpecials = this.stripString(strSpecials, "%u2013", '-');
-		strSpecials = this.stripString(strSpecials, "%u2014", '—');
-		strSpecials = this.stripString(strSpecials, "%u201C", '“');
-		strSpecials = this.stripString(strSpecials, "%u201D", '”');
+		strSpecials = stripString(strSpecials, "%09", '	');
+		strSpecials = stripString(strSpecials, "%3C", '<');
+		strSpecials = stripString(strSpecials, "%3E", '>');
+		strSpecials = stripString(strSpecials, "%23", '#');
+		strSpecials = stripString(strSpecials, "%3A", ':');
+		strSpecials = stripString(strSpecials, "%3B", ';');
+		strSpecials = stripString(strSpecials, "%3D", '=');
+		strSpecials = stripString(strSpecials, "%D7", '×');
+		strSpecials = stripString(strSpecials, "%u2018", '');
+		strSpecials = stripString(strSpecials, "%u2019", '');
+		strSpecials = stripString(strSpecials, "%u2013", '-');
+		strSpecials = stripString(strSpecials, "%u2014", '—');
+		strSpecials = stripString(strSpecials, "%u201C", '“');
+		strSpecials = stripString(strSpecials, "%u201D", '”');
 		
 		
-		while (strSpecials.search(/%../) != -1) {
+		while (strSpecials.search(/%../) !== -1) {
 			strSpecials = strSpecials.replace(/%../, "");
 		}
 		
 		strSpecials = strSpecials.replace(/<[^<>]+>|<\/[^<>]+>/g,'');
 		//strSpecials = strSpecials.replace(/<(?:.|\n)*?>/gm, '');
 		return strSpecials;
-	},
+	}; 
 	
 	/**
 	 * Logging, store it
 	 */
-	creLog: function(msg, lvl) {
-		if (!msg)  return null;
-		if (!lvl) lvl = 1;
-		if (this.dmesg) {
-			this.dmesg.push('['+lvl+']:' + " " + msg);
+	var creLog = function(msg, lvl) {
+		if (!msg) 
+			{return undefined;}
+		if (!lvl) 
+			{lvl = 1;}
+		if (dmesg) {
+			dmesg.push('['+lvl+']:' + " " + msg);
 		} else {
-			this.dmesg = new Array('['+lvl+']:' + " " + msg);
+			dmesg = new Array('['+lvl+']:' + " " + msg);
 		}
-	},
+	}; 
 	
 	/**
 	 * Dump it.
 	 */
-	creLogDump: function(lvl) {
-		if (this.dmesg) {
+	var creLogDump = function(lvl) {
+		if (dmesg) {
 			log('--- Dumping log at level ['+lvl+'] ---');
-			for (var line in this.dmesg) {
-				var clvl = this.dmesg[line].match(/\d+/);
+			_.every(dmesg, function(line) {
+				var clvl = line.match(/\d+/);
 				if (clvl && (parseInt(clvl[0].trim()) <= lvl))
-					log(this.dmesg[line]);
-			}
+					{log(line);}
+				return true; 
+			}); 
 			log('--- Log dump at level ['+lvl+'] complete ---');
 		} else {log("No log found");}
-	},
+	}; 
 	
 	/**
 	 * Add warnings
 	 */
-	addWarning: function(msg) {
-		if (this.warn)
-			this.warn.push(msg);
+	var addWarning = function(msg) {
+		if (warn)
+			{warn.push(msg);}
 		else
-			this.warn = new Array(msg);
-	},
+			{warn = new Array(msg);}
+	}; 
 	
 	/**
 	 * Send warnings
 	 */
-	sendWarnings: function(token,msg) {
+	var sendWarnings = function(token,msg) {
 		var content = '';
-		if (this.warn) {
-			for (elem in this.warn) {
+		if (warn) {
+			_.every(warn, function(elem) {
 				content += '<p>' 
 					+ '<span style="color: #FF9100; font-weight: bold">Warning: </span>'
-					+ this.warn[elem] + '</p>'; 
-			}
-			content += msg; 
-			this.sendFeedback(content,this.design.warningImg,token.get('imgsrc'));
+					+ elem + '</p>'; 
+				return true; 
+			}); 
+			content += (msg ? msg:''); 
+			sendFeedback(content,design.warningImg,token.get('imgsrc'));
 		}
-	},
+	}; 
 
 	/**
 	 * get warning block
 	 */
-	getWarningBlock: function(token,msg) {
+	var getWarningBlock = function(msg) {
 		var content = '';
-		if (this.warn) {
-			for (elem in this.warn) {
+		if (warn) {
+			_.every(warn, function(elem) {
 				content += '<p>' 
 					+ '<span style="color: #FF9100; font-weight: bold">Warning: </span>'
-					+ this.warn[elem] + '</p>'; 
-			}
-			content += msg; 
-			return this.getFeedbackBlock(content,this.design.warningImg,token.get('imgsrc'));
+					+ elem + '</p>'; 
+				return true; 
+			}); 
+			content += (msg ? msg:''); 
+			//return getFeedbackBlock(content,design.warningImg,token.get('imgsrc'));
+			return content; 
 		}
-	},
+	}; 
 	
 	/**
 	 * Fake message is fake!
 	 */
-	sendFeedback: function(msg,img,tokenImg) {
+	var sendFeedback = function(msg,img,tokenImg) {
 		var content = '/w GM '
 				+ '<div style="position: absolute; top: 4px; left: 5px; width: 26px;">'
-					+ '<img src="' + this.design.feedbackImg + '">' 
+					+ '<img src="' + design.feedbackImg + '">' 
 				+ '</div>'
 				+ msg;
 		if (tokenImg && img) {
@@ -2905,13 +2966,13 @@ var CreatureGenPF = {
 				+ '</div>';
 		}
 		
-		sendChat(this.design.feedbackName,content);
-	},
+		sendChat(design.feedbackName,content);
+	}; 
 
 	/**
 	 * Fake message block
 	 */
-	getFeedbackBlock: function(msg,img,tokenImg) {
+	var getFeedbackBlock = function(msg,img,tokenImg) {
 		var content = msg;
 		if (tokenImg && img) {
 			content +=
@@ -2925,79 +2986,86 @@ var CreatureGenPF = {
 				+ '</div>';
 		}
 		return content; 
-	},
+	}; 
 	
 	/**
 	 * Performs Genesis with a default name other than 'Creature''
 	 */
-	doNameGenesis: function(msg, name) {
-		if (!msg || !name) return null;
-		var originalDefaultName = this.fields.defaultName;
+	var doNameGenesis = function(msg, name) {
+		if (!msg || !name) 
+			{return undefined;}
+		var originalDefaultName = fields.defaultName;
 		
-		this.fields.defaultName = name;
-		this.doGenesis(msg);
-		this.fields.defaultName = originalDefaultName;
-	},
+		fields.defaultName = name;
+		doGenesis(msg);
+		fields.defaultName = originalDefaultName;
+	}; 
 	
 	/**
 	 * Performs Genesis granting control to a player
 	 */
-	doPlayerGenesis: function(msg, playerName) {
-		if (!msg || !playerName) return null;
-		var players = null;
-		var name = null;
-		var targets = new Array();
-		var targetName = null;
-		var targetPlayer = null;
+	var doPlayerGenesis = function(msg, playerName) {
+		if (!msg || !playerName) 
+			{return undefined;}
+		var players;
+		var name;
+		var targets = [];
+		var targetName;
+		var targetPlayer;
 		var levDiff = 0;
 		var minDiff = 255; // good enough
-		var originalMenuWhis = this.fields.menuWhis;
-		var originalResultWhis = this.fields.resultWhis;
-		var originalName = this.fields.publicName;
-		var originalPublicAnn = this.fields.publicAnn;
+		var originalMenuWhis = fields.menuWhis;
+		var originalResultWhis = fields.resultWhis;
+		var originalName = fields.publicName;
+		var originalPublicAnn = fields.publicAnn;
 		var re = new RegExp(playerName,'i');
 		players = findObjs({
 			_type: "player",
 		});
 		
-		for (var elem in players) {
-			name = players[elem].get('_displayname').toLowerCase();
+		_.every(players, function(elem) {
+			name = elem.get('_displayname').toLowerCase();
 			if (name.match(re)) {
-				targets.push(players[elem]);
+				targets.push(elem);
 			}
-		}
+			return true; 
+		}); 
 		
 		if (targets.length < 1) {
-			this.sendFeedback('Could not find player: ' + playerName);
-			return null;
-		} else if (targets.length == 1) {
+			sendFeedback('Could not find player: ' + playerName);
+			return undefined;
+		} else if (targets.length === 1) {
 			targetName = targets[0].get('_displayname').toLowerCase();
 			targetPlayer = targets[0];
 		} else {
 			targetName = targets[0].get('_displayname').toLowerCase();
-			for (var elem in targets) {
-				name = targets[elem].get('_displayname').toLowerCase();
-				levDiff = this.getLev(playerName,name);
+			_.every(targets, function(elem) {
+				name = elem.get('_displayname').toLowerCase();
+				levDiff = getLev(playerName,name);
 				if (levDiff < minDiff) {
 					minDiff = levDiff;
 					targetName = name;
-					targetPlayer = targets[elem];
+					targetPlayer = elem;
 				}
-			}
+				return true; 
+			}); 
 		}
-		this.fields.menuWhis = '/w "'+targetName+'" ';
-		this.fields.resultWhis = '';
-		this.fields.publicAnn = '';
-		this.fields.summoner = targetPlayer;
-		this.doGenesis(msg);
-		this.fields.summoner = null;
-		this.fields.publicAnn = originalPublicAnn;
-		this.fields.publicName = originalName;
-		this.fields.resultWhis = originalResultWhis;
-		this.fields.menuWhis = originalMenuWhis;
-	},
+		fields.menuWhis = '/w "'+targetName+'" ';
+		fields.resultWhis = '';
+		fields.publicAnn = '';
+		fields.summoner = targetPlayer;
+		doGenesis(msg);
+		var pgenWork = function(args) {
+			fields.summoner = undefined;
+			fields.publicAnn = originalPublicAnn;
+			fields.publicName = originalName;
+			fields.resultWhis = originalResultWhis;
+			fields.menuWhis = originalMenuWhis;
+		}	
+		workList.push({workFunc: pgenWork}); 
+	}; 
 	
-	getLev: function(s1, s2, cost_ins, cost_rep, cost_del) {
+	var getLev = function(s1, s2, cost_ins, cost_rep, cost_del) {
 	//		 discuss at: http://phpjs.org/functions/levenshtein/
 	//		original by: Carlos R. L. Rodrigues (http://www.jsfromhell.com)
 	//		bugfixed by: Onno Marsman
@@ -3013,11 +3081,11 @@ var CreatureGenPF = {
 	//		  returns 3: 6
 		var LEVENSHTEIN_MAX_LENGTH = 255; // PHP limits the function to max 255 character-long strings
   
-		cost_ins = cost_ins == null ? 1 : +cost_ins;
-		cost_rep = cost_rep == null ? 1 : +cost_rep;
-		cost_del = cost_del == null ? 1 : +cost_del;
+		cost_ins = cost_ins === undefined ? 1 : +cost_ins;
+		cost_rep = cost_rep === undefined ? 1 : +cost_rep;
+		cost_del = cost_del === undefined ? 1 : +cost_del;
 
-		if (s1 == s2) {
+		if (s1 === s2) {
 			return 0;
 		}
 
@@ -3063,7 +3131,7 @@ var CreatureGenPF = {
 			p2[0] = p1[0] + cost_del;
 	
 			for (i2 = 0; i2 < l2; i2++) {
-				c0 = p1[i2] + ((s1[i1] == s2[i2]) ? 0 : cost_rep);
+				c0 = p1[i2] + ((s1[i1] === s2[i2]) ? 0 : cost_rep);
 				c1 = p1[i2 + 1] + cost_del;
 	  
 				if (c1 < c0) {
@@ -3087,128 +3155,125 @@ var CreatureGenPF = {
 		c0 = p1[l2];
   
 		return c0;
-	},
+	}; 
 	
 	/**
 	 * "And then the GM said, let there be monsters!" 
 	 * 
 	 * Performs Creature Generation
 	 */
-	doGenesis: function(msg) {
-		var token = null;
+	var doGenesis = function(msg) {
+		var token;
 		var content = ''; 
 
 		if (!(msg.selected && msg.selected.length > 0)) {
-			this.sendFeedback("no token selected for creature creation");
+			sendFeedback("no token selected for creature creation");
 			return;
 		}
 
 		if (msg.selected.length > 1) {
-			CreatureGenPF.sendFeedback( '<div style="font-weight: bold; color: #7AB6FF; font-size: 150%">' 
+			sendFeedback( '<div style="font-weight: bold; color: #7AB6FF; font-size: 150%">' 
 				+ 'Starting group generation</div>');
 		}
-		CreatureGenPF.locked = true; 
-		CreatureGenPF.workStart = Date.now(); 
+		locked = true; 
+		workStart = Date.now(); 
 
 		_.each(msg.selected, function(e) {
 			var genesisWork = function(e) {
 				token = getObj('graphic', e._id);
-				if ((token && (token.get('_subtype') != 'token')) || !token) {
-					CreatureGenPF.sendFeedback(
+				if ((token && (token.get('_subtype') !== 'token')) || !token) {
+					sendFeedback(
 						'<span style="font-weight: bold; color: #FF0000;">Invalid Selection</span>'
-						+ (msg.selected.length > 1 ? ('<div style="color: black; font-style: italic; font-weight: bold;">('+(msg.selected.length-CreatureGenPF.workList.length+1)+'/'+msg.selected.length+')</div>'):'')
+						+ (msg.selected.length > 1 ? ('<div style="color: black; font-style: italic; font-weight: bold;">('+(msg.selected.length-workList.length+1)+'/'+msg.selected.length+')</div>'):'')
 						); 
 					return;
 				}
 				try {
-					CreatureGenPF.dmesg = null;
-					CreatureGenPF.warn = null;
-					CreatureGenPF.scan(token);
-					if (CreatureGenPF.warn) {
-						CreatureGenPF.sendWarnings(
-							token,
-							(msg.selected.length > 1 ? ('<div style="color: black; font-style: italic; font-weight: bold;">('+(msg.selected.length-CreatureGenPF.workList.length+1)+'/'+msg.selected.length+')</div>'):'')
-							); 
-					} else {
-						CreatureGenPF.sendFeedback(
-							'<span style="font-weight: bold; color: #08AF12;">' 
-							+ token.get('name') 
-							+ '</span>' 
-							+ " has been generated successfully!"
-							+ (msg.selected.length > 1 ? ('<div style="color: black; font-style: italic; font-weight: bold;">('+(msg.selected.length-CreatureGenPF.workList.length+1)+'/'+msg.selected.length+')</div>'):''),
-							CreatureGenPF.design.successImg,
-							token.get('imgsrc'));
-					}
-					//this.creLogDump(5);
-					CreatureGenPF.character = null;
-				} catch (e) {
-					log("GENESIS ERROR: " + e);
-					CreatureGenPF.sendFeedback(
-						'<span style="font-weight: bold; color: #FF0000;">' 
+					dmesg = undefined;
+					warn = undefined;
+					scan(token);
+					sendFeedback(
+						(warn ? getWarningBlock():'')
+						+ '<span style="font-weight: bold; color: '+(warn ? '#FF9100':'#08AF12')+';">' 
+						+ token.get('name')
+						+ '</span>' 
+						+ ' has been generated ' + (warn ? 'with warnings.':'successfully!')
+						+ (msg.selected.length > 1 ? ('<div style="color: black; font-style: italic; font-weight: bold;">('+(msg.selected.length-workList.length+1)+'/'+msg.selected.length+')</div>'):''),
+						(warn ? design.warningImg:design.successImg),
+						token.get('imgsrc'));
+					//creLogDump(5);
+					character = undefined;
+				} catch (err) {
+					log("GENESIS ERROR: " + err);
+					sendFeedback(
+						(warn ? getWarningBlock():'')
+						+ '<span style="font-weight: bold; color: #FF0000;">' 
 						+ 'There was an error during token generation.' 
 						+ '</span> '
 						+ 'Please see the log for details, and delete the erroneous journal entry.'
-						+ (msg.selected.length > 1 ? ('<div style="color: black; font-style: italic; font-weight: bold;">('+(msg.selected.length-CreatureGenPF.workList.length+1)+'/'+msg.selected.length+')</div>'):''),
-					CreatureGenPF.design.errorImg,
+						+ (msg.selected.length > 1 ? ('<div style="color: black; font-style: italic; font-weight: bold;">('+(msg.selected.length-workList.length+1)+'/'+msg.selected.length+')</div>'):''),
+					design.errorImg,
 					token.get("imgsrc"));
-					CreatureGenPF.creLogDump(CreatureGenPF.debugLvl);
-					CreatureGenPF.warn = null;
-					CreatureGenPF.character = null;
-					log("-----Please ensure that the statistics block is properly formatted.-----")
+					creLogDump(debugLvl);
+					warn = undefined;
+					character = undefined;
+					log("-----Please ensure that the statistics block is properly formatted.-----"); 
 				}
 			}; 
 
-			CreatureGenPF.workList.push({workFunc: genesisWork, workData: [e]}); 
+			workList.push({workFunc: genesisWork, workData: [e]}); 
 		},this); 
 
 		if (msg.selected.length > 1) {
-			CreatureGenPF.workList.push({workFunc: function() {
-				var tTime = (Date.now() - CreatureGenPF.workStart)/1000; 
-				CreatureGenPF.sendFeedback(
+			workList.push({workFunc: function() {
+				var tTime = (Date.now() - workStart)/1000; 
+				sendFeedback(
 					'<div style="font-weight: bold; color: #08AF12; font-size: 150%">' 
 					+ 'Group generation complete </div>'
 					+ '<div style="color: blue; font-size: 100%; font-style: italic: font-weight: bold">(Time elapsed: '+tTime.toFixed(2)+'s)</div>');
-				CreatureGenPF.locked = false; 
+				locked = false; 
 			}, workData: []}); 
 		} else {
-			CreatureGenPF.locked = false; 
+			locked = false; 
 		}
 
-		CreatureGenPF.doDelayedWork(CreatureGenPF.workList); 
-	},
+		doDelayedWork(workList); 
+	}; 
 
 	/**
 	 * Delayed Worktask
 	 */ 
-	doDelayedWork: function() {
-		if (!CreatureGenPF.workList || !CreatureGenPF.workList.length)
+	var doDelayedWork = function() {
+		if (!workList || !workList.length)
 			{return;}
 
-		var payload = CreatureGenPF.workList.shift();
+		var payload = workList.shift();
 		if (!payload)
 			{return;}
 		payload.workFunc.apply(undefined,payload.workData); 
-		setTimeout(CreatureGenPF.doDelayedWork,CreatureGenPF.workDelay); 
-	},
+		setTimeout(doDelayedWork,workDelay); 
+	}; 
 
 	
 	/**
 	 * Show help
 	 */
-	showHelp: function() {
-		var content = null;
+	var showHelp = function() {
+		var content;
 		var designTmpList = "";
 		var attackTmpList = "";
 		
-		if (typeof(CGTmp) != "undefined") {
+		if (typeof(CGTmp) !== "undefined") {
 			try {
-				for (tmp in CGTmp.designTmp) {
+				_.every(_.keys(CGTmp.designTmp), function(tmp) {
 					designTmpList += '<div>' + '<a href="!CreatureGen -set-design ' + tmp + '">' + tmp + ' </a></div>';
-				}
-				for (tmp in CGTmp.attackTmp) {
+					return true; 
+				}); 
+				_.every(_.keys(CGTmp.attackTmp), function(tmp) {
 					attackTmpList += '<div>' + '<a href="!CreatureGen -set-attack ' + tmp + '">' + tmp + ' </a></div>';
-				}
-			} catch (e) {
+					return true; 
+				}); 
+			} catch (ex) {
 				log("ERROR accessing CGTmp: " + e);
 				designTmpList = "";
 				attackTmpList = "";
@@ -3216,7 +3281,7 @@ var CreatureGenPF = {
 		}
 		content = '<div style="background-color: #FFFFFF; border: 1px solid black; left-margin 5x; right margin 5px; padding-top: 5px; padding-bottom: 5px;;">'
 					+ '<div style="border-bottom: 1px solid black;">'
-						+ '<span style="font-weight: bold; font-size: 150%">CreatureGen v'+this.version+'</span>'
+						+ '<span style="font-weight: bold; font-size: 150%">CreatureGen v'+version+'</span>'
 					+ '</div>'
 					+ '<div style="padding-left: 10px; padding-right: 10px;">'
 						+ '<div>'
@@ -3252,9 +3317,9 @@ var CreatureGenPF = {
 						+ '<li style="padding-left: 10px;">'
 							+ 'Set design template'
 						+ '</li>'
-						+ (designTmpList=='' ? '' : '<div style="border: 1px solid blue; text-align: center;"><span style="text-decoration: underline;">Available design templates:</span>')
+						+ (designTmpList==='' ? '' : '<div style="border: 1px solid blue; text-align: center;"><span style="text-decoration: underline;">Available design templates:</span>')
 							+ designTmpList
-						+ (designTmpList=='' ? '' : '</div>')
+						+ (designTmpList==='' ? '' : '</div>')
 						+ '<div>'
 							+ '<span style="font-weight: bold;">!CreatureGen -set-attack [name]</span>'
 						+ '</div>'
@@ -3264,9 +3329,9 @@ var CreatureGenPF = {
 						+ '<li style="padding-left: 10px;">'
 							+ 'Set attack template'
 						+ '</li>'
-						+ (attackTmpList=='' ? '' : '<div style="border: 1px solid blue; text-align: center;"><span style="text-decoration: underline;">Available attack templates:</span>')
+						+ (attackTmpList==='' ? '' : '<div style="border: 1px solid blue; text-align: center;"><span style="text-decoration: underline;">Available attack templates:</span>')
 							+ attackTmpList
-						+ (attackTmpList=='' ? '' : '</div>')
+						+ (attackTmpList==='' ? '' : '</div>')
 						+ '<div>'
 							+ '<span style="font-weight: bold;">!CreatureGen -dmesg [lvl]</span>'
 						+ '</div>'
@@ -3277,99 +3342,114 @@ var CreatureGenPF = {
 					
 					+ '</div>'
 				+ '</div>';
-		this.sendFeedback(content);
-	},
+		sendFeedback(content);
+	}; 
 	
 	/**
 	 * Handle chat messages
 	 */
-	handleChatMessage: function(msg) {
+	var handleChatMessage = function(msg) {
 		var cmdName = "!CreatureGen";
 		var msgTxt = msg.content;
-		var args = null;
-		if ((msg.type == "api") 
-		&& (msgTxt.indexOf(cmdName) != -1)
+		var args;
+		if ((msg.type === "api") 
+		&& (msgTxt.indexOf(cmdName) !== -1)
 		&& playerIsGM(msg.playerid)) {
 			args = msgTxt.replace(cmdName,'').trim().toLowerCase();
-			if (args != "") {
-				if (this.locked) {
-					this.sendFeedback('<span style="color: #FF8D0B; font-weight: bold;">'
+			if (args !== "") {
+				if (locked) {
+					sendFeedback('<span style="color: #FF8D0B; font-weight: bold;">'
 						+ ' BUSY </span>');
 				} else if (args.indexOf('-set-design') === 0) {
 					args = args.replace('-set-design','').trim();
-					this.selectDesignTemplate(args);
+					selectDesignTemplate(args);
 				} else if(args.indexOf('-set-attack') === 0) {
 					args = args.replace('-set-attack','').trim();
-					this.selectAttackTemplate(args);
+					selectAttackTemplate(args);
 				} else if (args.indexOf('-help') === 0) {
-					this.showHelp();
+					showHelp();
 				} else if (args.indexOf('-dmesg') === 0) {
 					var level = 0;
 					args = args.replace('-dmesg','').trim();
-					level = this.getBonusNumber(args,this.bonusEnum.SCALAR);
-					this.creLogDump(level);
-					this.sendFeedback('<span style="color: #FF8D0B;">'
+					level = getBonusNumber(args,bonusEnum.SCALAR);
+					creLogDump(level);
+					sendFeedback('<span style="color: #FF8D0B;">'
 						+ 'Dumping debug from last <b>GENESIS</b> at level ('+level+')'
 						+ '</span>');
 				} else if (args.indexOf('-player') === 0) {
 					args = args.replace('-player','').trim();
-					this.doPlayerGenesis(msg,args);
+					doPlayerGenesis(msg,args);
 				} else if (args.indexOf('-name') === 0) {
 					args = args.replace('-name','').trim();
-					this.doNameGenesis(msg,args);
+					doNameGenesis(msg,args);
 				} else {
-					this.sendFeedback("Unknown CreatureGen command '"+args+"'");
-					this.showHelp();
+					sendFeedback("Unknown CreatureGen command '"+args+"'");
+					showHelp();
 				}
 				
-			} else if (this.locked) {
-				this.sendFeedback('<span style="color: #FF8D0B; font-weight: bold;">'
+			} else if (locked) {
+				sendFeedback('<span style="color: #FF8D0B; font-weight: bold;">'
 					+ ' BUSY </span>');
 			} else {
-				this.doGenesis(msg);
+				doGenesis(msg);
 			}
 		}
-	},
+	}; 
 	
 	/**
 	 * Handle new graphics added
 	 */
-	handleAddGraphic: function(obj) {
-		var type = null;
-		var charSheet = null;
-		var charId = null;
-		if ((type=obj.get('_subtype')) !=null) {
-		   if (type == 'token') {
+	var handleAddGraphic = function(obj) {
+		var type;
+		var charSheet;
+		var charId;
+		if (!!(type=obj.get('_subtype'))) {
+		   if (type === 'token') {
 				charSheet = obj.get('represents');
-				if (charSheet != null) {
+				if (charSheet) {
 					charSheet = getObj("character", charSheet);
 					if (charSheet) {
-						this.prepToken(obj,charSheet);
+						prepToken(obj,charSheet);
 					}
 				}
 			}
 		}
-	},
-	
-	/**
-	 * Register Roll20 handlers
-	 */
-	registerAPI: function() {
-		// auto hp/ac/link populate
-		on("add:graphic", function(obj) {
-			CreatureGenPF.handleAddGraphic(obj);
-		});
-		// handle messages
-		on("chat:message", function(msg) {
-			CreatureGenPF.handleChatMessage(msg);
-		});
-	},
+	}; 
 
-}
+	return {
+		
+		/**
+		 * Register Roll20 handlers
+		 */
+		registerAPI : function() {
+			on('chat:message',handleChatMessage);
+			on('add:graphic',handleAddGraphic);
+		},
+
+		init: function() {
+			var rc = true;
+			fields.tmpAtk = atkTemplate;
+			if (state.cgen_design) 
+				{rc = selectDesignTemplate(state.cgen_design.toLowerCase(),true);} 
+			if (!rc) {
+				log("ERROR: state design template no longer exists, defaulting..");
+				state.cgen_design = undefined;
+			}
+			if (state.cgen_attack) 
+				{rc = selectAttackTemplate(state.cgen_attack.toLowerCase(),true);}
+			if (!rc) {
+				log("ERROR: state attack template no longer exists, defaulting..");
+				state.cgen_attack = undefined;
+			}
+		}
+	}; 
+
+}()); 
 
 
 
 on("ready", function() {
+	'use strict'; 
 	CreatureGenPF.init();
 	CreatureGenPF.registerAPI();
 });
