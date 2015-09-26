@@ -921,10 +921,12 @@ var TrackerJacker = (function() {
 
 		if ((journal = getObj('character',curToken.get('represents')))) {
 			name = characterObjExists('name','attribute',journal.get('_id')); 
-			if (!name) 
-				{name = journal.get('name');}
-			else 
+			if (name) 
 				{name = name.get('current');}
+			else if (curToken.get('showplayers_name')) 
+				{name = curToken.get('name');}
+			else 
+				{name = journal.get('name');}
 		} else if (curToken.get('showplayers_name')) {
 			name = curToken.get('name');
 		}
