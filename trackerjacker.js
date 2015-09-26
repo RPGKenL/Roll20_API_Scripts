@@ -1578,7 +1578,7 @@ var TrackerJacker = (function() {
 		if (typeof(name) === 'string')
 			{name = name.toLowerCase();}
 
-		if (isNaN(duration) || isNaN(direction)) {
+		if (isNaN(duration) || isNaN(direction) || !name) {
 			sendError('Invalid status item syntax');
 			return;
 		}
