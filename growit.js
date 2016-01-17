@@ -20,7 +20,7 @@
  */
 
 var GrowIt = {
-    version: 0.6.1,
+    version: 0.61,
     author: 'Ken L.',
     
     bonusEnum: Object.freeze({
