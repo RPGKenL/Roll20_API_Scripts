@@ -93,7 +93,8 @@ var CreatureGenPF = (function() {
 	 */
 	var fields = {
 		defaultName: "Creature",
-		publicName: "@{name}",
+		charDataPrefix: "CGen_",
+		publicName: "@{CGen_name}",
 		publicEm: "/emas ",
 		publicAtkEm: "/as Attack ",
 		publicDmgEm: "/as Damage ",
@@ -448,23 +449,11 @@ var CreatureGenPF = (function() {
 		var name,AC,hp,prep;
 		var charId = character.get('_id');
 		
-		hp = findObjs({
-			_type: "attribute",
-			name: "hp",
-			_characterid: charId 
-		})[0];
+		hp = getAttribute("hp", charId);
 		
-		AC = findObjs({
-			_type: "attribute",
-			name: "AC",
-			_characterid: charId 
-		})[0];
+		AC = getAttribute("AC", charId);
 		
-		prep = findObjs({
-			_type: "attribute",
-			name: "CGEN",
-			_characterid: charId 
-		})[0];
+		prep = getAttribute("CGEN", charId);
 		
 		name = character.get('name');
 		
@@ -512,11 +501,7 @@ var CreatureGenPF = (function() {
 		var unitSize = 1;
 		var pageScale = getObj('page',token.get('_pageid')).get('snapping_increment');
 		var tsize = parseInt(unitPixels*(pageScale===0 ? 1:pageScale)); 
-		var size = findObjs({
-			_type: "attribute",
-			name: "Size",
-			_characterid: charId 
-		})[0];
+		var size = getAttribute("Size", charId);
 		if (!size) 
 			{return;}
 
@@ -2324,11 +2309,7 @@ var CreatureGenPF = (function() {
 		var retval = 0;
 		var attr;
 		
-		attr = findObjs({
-				_type: "attribute",
-				name: name,
-				_characterid: charId 
-		})[0];
+		attr = getAttribute(name, charId);
 		
 		if (!attr) {
 			throw "Error: no attribute found '" + name + "'";
@@ -2377,15 +2358,26 @@ var CreatureGenPF = (function() {
 			{curVal = '';}
 		if (!maxVal)
 			{maxVal = '';}
-		creLog("addAttribute: " + name + " " + curVal + " " + maxVal + " " + charId,2);
+		creLog("addAttribute: " + fields.charDataPrefix + name + " " + curVal + " " + maxVal + " " + charId,2);
 			
 		createObj("attribute", {
-				name: name,
+				name: fields.charDataPrefix + name,
 				current: curVal,
 				max: maxVal,
 				characterid: charId
 			});
 	}; 
+	
+	/**
+	 * Get an attribute from a character
+	 */
+	var getAttribute = function(name, charId) {
+		return  findObjs({
+				_type: "attribute",
+				name: fields.charDataPrefix + name,
+				_characterid: charId
+		})[0];
+	};
 	
 	/**
 	 * Add an ability to a character
@@ -2409,11 +2401,7 @@ var CreatureGenPF = (function() {
 		if (!isPublic) 
 			{isPublic = false;}
 		var action = "";
-		var attr = findObjs({
-				_type: "attribute",
-				name: attrName,
-				_characterid: charId 
-		})[0];
+		var attr = getAttribute(attrName, charId);
 		if (!attr) {
 			throw ("Error: no attribute found '" + name + "'");
 		}
